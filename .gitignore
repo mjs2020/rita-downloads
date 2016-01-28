@@ -1,0 +1,5 @@
+node_modules
+podcasts.csv
+downloads/
+persist/
+tmp/

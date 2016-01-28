@@ -1,0 +1,24 @@
+{
+  "name": "podmanager.js",
+  "version": "0.0.1",
+  "description": "A command line, nodejs podcast downloader",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mjs2020/podmanager.js"
+  },
+  "keywords": [
+    "podcast"
+  ],
+  "author": "Francesco Merletti",
+  "license": "MIT",
+  "dependencies": {
+    "async": "^1.5.2",
+    "basic-csv": "0.0.2",
+    "feedparser": "^1.1.4",
+    "moment": "^2.11.1",
+    "node-persist": "0.0.8",
+    "request": "^2.67.0",
+    "sanitize-filename": "^1.5.3"
+  }
+}
