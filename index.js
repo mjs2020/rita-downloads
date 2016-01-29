@@ -1,6 +1,10 @@
 /*
-* 
-* Run with node index.js
+* podmanager.js
+* (c) Francesco Merletti <me@fm.to.it> @mjs2020
+* MIT Licence
+*
+* Run with:
+*     node index.js
 */
 
 // Config vars
@@ -56,7 +60,7 @@ csv.readCSV(__dirname+'/podcasts.csv', function (err, rows) {
       if (res.statusCode != 200) return this.emit('error', new Error('Bad status code'));
       res.pipe(feedparser);
     });
-    
+
     // Configure feedparser
     feedparser.on('error', done);
     feedparser.on('end', done);
@@ -83,8 +87,8 @@ csv.readCSV(__dirname+'/podcasts.csv', function (err, rows) {
             podcast: row[0],
             filename: datestring+' '+item.title,
             url: item.enclosures[0].url
-          });        
-        });        
+          });
+        });
       }
       // Then clean up old entries (any entries not seen in RSSes for over two weeks)
       var currentDate = moment();
