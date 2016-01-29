@@ -6,6 +6,8 @@
 // Config vars
 var downloadDir = __dirname+'/downloads',
   tmpDir = __dirname+'/tmp',
+  storageDir = __dirname+'/persist',
+  ignorePodcastsOlderThan = 7, // Useful to set for the first run if you don't want to download a huge backlog
   concurrentDownloads = 4;
 
 // Dependencies
@@ -24,13 +26,16 @@ var async = require('async'),
 var dlCount = 0;
 
 // Load logs to avoid re-downloading the same podcasts
-storage.initSync();
+storage.initSync({ dir: storageDir });
+
+// Log start
+storage.setItem('lastRun', { time: new Date(), message: 'Started'});
 
 // Clean up tmp dir
 exec('rm '+tmpDir+'/*');
 
 // Read list of podcast URLs from CSV file, call then and add download jobs into the queue
-csv.readCSV('podcasts.csv', function (err, rows) {
+csv.readCSV(__dirname+'/podcasts.csv', function (err, rows) {
   var done = function (err) {
     if (err) { console.log(err, err.stack); }
   }
@@ -62,7 +67,7 @@ csv.readCSV('podcasts.csv', function (err, rows) {
         // If the item doesn't have a link skip it
         if (!item.link || item.link == '' ) return;
         // If the pubDate is more than 1 week ago ignore it
-        if (moment().diff(moment(item.pubDate),'days')>7) return;
+        if (moment().diff(moment(item.pubDate),'days')>ignorePodcastsOlderThan) return;
         // Check if we already have the URL in the logs
         storage.getItem(sanitize(item.link), function (err, value) {
           if (err) return;
@@ -77,14 +82,14 @@ csv.readCSV('podcasts.csv', function (err, rows) {
           downloader.push({
             podcast: row[0],
             filename: datestring+' '+item.title,
-            url: item.link
+            url: item.enclosures[0].url
           });        
         });        
       }
       // Then clean up old entries (any entries not seen in RSSes for over two weeks)
       var currentDate = moment();
       storage.forEach(function(key, value) {
-        if (!value || !value.lastSeen || currentDate.diff(moment(value.lastSeen), 'days')>14) {
+        if ((!value || !value.lastSeen || currentDate.diff(moment(value.lastSeen), 'days')>14) && key != 'lastRun' && key != 'lastComplete')  {
           storage.removeItem(sanitize(key));
         }
       });
@@ -96,7 +101,6 @@ csv.readCSV('podcasts.csv', function (err, rows) {
 var downloader = async.queue(function(task, callback) {
   // Create curl download command and download to tmp dir
   var curl = 'curl -L ' + task.url + ' --create-dirs -o "' + tmpDir + '/' + sanitize(task.filename) + '.mp3" ';
-  // console.log('Download: '+sanitize(task.filename))
   var child = exec(curl, function(err, stdout, stderr) {
     // Handle error
     if (err) {
@@ -125,3 +129,6 @@ var downloader = async.queue(function(task, callback) {
     });
   });
 }, concurrentDownloads);
+downloader.drain = function () {
+  storage.setItem('lastComplete', { time: new Date(), message: 'Completed '+dlCount+' downloads.'});
+}
