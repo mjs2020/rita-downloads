@@ -38,15 +38,21 @@ storage.setItem('lastRun', { time: new Date(), message: 'Started'});
 // Clean up tmp dir
 exec('rm '+tmpDir+'/*');
 
+// Clean up entries in storage
+var currentDate = moment();
+storage.forEach(function(key, value) {
+  if ((!value || !value.lastSeen || currentDate.diff(moment(value.lastSeen), 'days')>14) && key != 'lastRun' && key != 'lastComplete')  {
+    storage.removeItem(key);
+  }
+});
+
 // Read list of podcast URLs from CSV file, call then and add download jobs into the queue
 csv.readCSV(__dirname+'/podcasts.csv', function (err, rows) {
-  var done = function (err) {
-    if (err) { console.log(err, err.stack); }
-  }
-  if (err) done(err);
-  rows.shift(); // Remove header row
+  if (err) return done(err);
+  // Remove header row
+  rows.shift();
+  // For each podcast create a request and a feedparser
   rows.forEach(function (row) {
-    // For each podcast create a request and a feedparser
     var req = request(row[1], {timeout: 120000, pool: false}),
         feedparser = new FeedParser();
     // Configure request
@@ -73,43 +79,48 @@ csv.readCSV(__dirname+'/podcasts.csv', function (err, rows) {
         // If the pubDate is more than 1 week ago ignore it
         if (moment().diff(moment(item.pubDate),'days')>ignorePodcastsOlderThan) return;
         // Check if we already have the URL in the logs
-        storage.getItem(sanitize(item.link), function (err, value) {
+        storage.getItem(sanitize(item.guid), function (err, value) {
           if (err) return;
           // If we have it, then update the lastSeen attribute
           if (typeof value != 'undefined') {
             value.lastSeen = new Date();
-            storage.setItem(sanitize(item.link), value);
+            storage.setItem(sanitize(item.guid), value);
             return;
           }
           // Otherwise add to download queue
+          console.log(value);
           var datestring = moment(item.pubDate).format('YYMMDD');
           downloader.push({
             podcast: row[0],
             filename: datestring+' '+item.title,
-            url: item.enclosures[0].url
+            url: item.enclosures[0].url,
+            guid: item.guid
           });
         });
       }
-      // Then clean up old entries (any entries not seen in RSSes for over two weeks)
-      var currentDate = moment();
-      storage.forEach(function(key, value) {
-        if ((!value || !value.lastSeen || currentDate.diff(moment(value.lastSeen), 'days')>14) && key != 'lastRun' && key != 'lastComplete')  {
-          storage.removeItem(sanitize(key));
-        }
-      });
     });
   });
 });
 
+// Error handler
+var done = function (err) {
+  if (err) { console.log(err, err.stack); }
+}
+
 // Make downloader async queue
 var downloader = async.queue(function(task, callback) {
   // Create curl download command and download to tmp dir
-  var curl = 'curl -L ' + task.url + ' --create-dirs -o "' + tmpDir + '/' + sanitize(task.filename) + '.mp3" ';
+  var curl = 'curl -sL -w "%{http_code}" ' + task.url + ' --create-dirs -o "' + tmpDir + '/' + sanitize(task.filename) + '.mp3" ';
   var child = exec(curl, function(err, stdout, stderr) {
     // Handle error
     if (err) {
       console.log('Error downloading: ' + err + stderr);
       callback(err);
+      return;
+    }
+    if (stdout != '200') {
+      console.log('HTTP status not 200');
+      callback('HTTP status not 200');
       return;
     }
     // Prepare paths
@@ -125,14 +136,19 @@ var downloader = async.queue(function(task, callback) {
           return;
         }
         dlCount++;
-        console.log('['+dlCount+'/'+(dlCount+downloader.length()+downloader.running())+'] Complete: '+sanitize(task.filename)+'.mp3 (' + downloader.length()+' Items left to download)')
+        console.log('['+dlCount+'/'+(dlCount+downloader.length()+downloader.running()-1)+'] Complete: '+sanitize(task.filename)+'.mp3 (' + downloader.length()+' Items left to download)')
         // Add item to storage
-        storage.setItem(sanitize(task.url),{ podcast: task.podcast, lastSeen: new Date(), download: true});
+        storage.setItem(sanitize(task.guid),{ podcast: task.podcast, lastSeen: new Date(), download: true});
         callback();
       });
     });
   });
 }, concurrentDownloads);
+
 downloader.drain = function () {
-  storage.setItem('lastComplete', { time: new Date(), message: 'Completed '+dlCount+' downloads.'});
+  storage.getItem('lastComplete', function (err, value) {
+    if (typeof value == 'undefined' || !Array.isArray(value)) value = [];
+    value.push({ time: new Date(), message: 'Completed '+dlCount+' downloads.'});
+    storage.setItem('lastComplete', value);
+  });
 }
