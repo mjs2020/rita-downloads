@@ -7,12 +7,18 @@
 *     node index.js
 */
 
-// Config vars
+// Config vars (change in production)
 var downloadDir = __dirname+'/downloads',
   tmpDir = __dirname+'/tmp',
   storageDir = __dirname+'/persist',
   ignorePodcastsOlderThan = 7, // Useful to set for the first run if you don't want to download a huge backlog
   concurrentDownloads = 4;
+// Uncomment below for prod
+// var downloadDir = '/volume1/music/rita/@@PODCAST',
+//   tmpDir = __dirname+'/tmp',
+//   storageDir = __dirname+'/persist',
+//   ignorePodcastsOlderThan = 365, // Useful to set for the first run if you don't want to download a huge backlog
+//   concurrentDownloads = 6;
 
 // Dependencies
 var async = require('async'),
@@ -88,7 +94,6 @@ csv.readCSV(__dirname+'/podcasts.csv', function (err, rows) {
             return;
           }
           // Otherwise add to download queue
-          console.log(value);
           var datestring = moment(item.pubDate).format('YYMMDD');
           downloader.push({
             podcast: row[0],
@@ -131,7 +136,7 @@ var downloader = async.queue(function(task, callback) {
       // Then move temp file to destination dir
       fs.rename(tmpPath, newPath, function (err) {
         if (err) {
-          console.log(err);
+          console.log('Error moving file: '+err);
           callback(err)
           return;
         }
