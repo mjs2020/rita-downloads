@@ -13,12 +13,6 @@ var downloadDir = __dirname+'/downloads',
   storageDir = __dirname+'/persist',
   ignorePodcastsOlderThan = 7, // Useful to set for the first run if you don't want to download a huge backlog
   concurrentDownloads = 4;
-// Uncomment below for prod
-// var downloadDir = '/volume1/music/rita/@@PODCAST',
-//   tmpDir = __dirname+'/tmp',
-//   storageDir = __dirname+'/persist',
-//   ignorePodcastsOlderThan = 365, // Useful to set for the first run if you don't want to download a huge backlog
-//   concurrentDownloads = 6;
 
 // Dependencies
 var async = require('async'),
