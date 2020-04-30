@@ -93,7 +93,7 @@ csv.readCSV(__dirname+'/podcasts.csv', function (err, rows) {
             podcast: row[0],
             filename: datestring+' '+item.title,
             url: item.enclosures[0].url,
-            guid: item.guid
+            guid: item.guid 
           });
         });
       }
