@@ -1,0 +1,7 @@
+{
+    "updatesUrl": "http://www.bdciechi.it/bib/index.php?catalogo=u",
+    "outputBasePath": "/volume1/music/rita/@@PODCAST",
+    "historyFile": "history.json",
+    "user": "xxx",
+    "pass": "yyy"
+}

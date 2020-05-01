@@ -1,0 +1,10 @@
+{
+  "plugins": ["@babel/plugin-proposal-optional-catch-binding"],
+  "presets": [
+    ["@babel/preset-env", {
+      "targets": {
+        "node": "4"
+      }
+    }]
+  ]
+}
