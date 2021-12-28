@@ -1,0 +1,20 @@
+{
+    "outputBasePath": "./downloads",
+    "historyPath": "./history.json",
+    "tmpDir": "./tmp",
+    "downloadsPerRun": 10,
+    "jquerySelector": "div.row.listaAudio",
+    "jquerySectionSelector": ".listaStagioniPuntate > li > a",
+    "programs": [
+        {
+            "name": "Momus",
+            "url": "http://www.raiplayradio.it/programmi/momusilcaffedellopera/archivio/puntate/",
+            "subfolder": "Momus"
+        },
+        {
+            "name": "Fahrenheit",
+            "url": "http://www.raiplayradio.it/programmi/fahrenheit/archivio/puntate/",
+            "subfolder": "Fahrenheit"
+        }
+    ]
+}
