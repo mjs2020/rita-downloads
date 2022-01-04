@@ -6,7 +6,7 @@ const log = require('./logger');
 const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/gi;
 const regex = new RegExp(urlRegex);
 
-module.exports = function (program, config) {
+export default function (program: { name: any; url: any; }, config: { jquerySectionSelector: any; }) {
     log(`${program.name} - Requesting page`);
     return request(program.url)
         .then(html => {

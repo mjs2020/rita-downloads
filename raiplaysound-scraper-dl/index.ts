@@ -1,12 +1,12 @@
 // External deps
-const path = require('path');
-const fs = require('fs-extra');      // used to have promisified functions and a few extra methods like readJson
-const Promise = require("bluebird"); // used for timeout and concurrency management
+import path from 'path';
+import fs from 'fs-extra';       // used to have promisified functions and a few extra methods like readJson
+import bluebird from "bluebird"; // used for timeout and concurrency management
 
 // Internal deps
-const scraper = require('./lib/scraper');
-const downloader = require('./lib/downloader');
-const log = require('./lib/logger')
+import scraper from './lib/scraper';
+import downloader from './lib/downloader';
+import log from './lib/logger';
 
 // Load & validate config
 const config = fs.readJsonSync(path.join(__dirname, 'config.json'));
@@ -19,7 +19,7 @@ log(`Config loaded. ${programs.length} programs to scrape.`);
 
 // load or create history.json
 let history = { downloadedEpisodes: [], failedEpisodes: {} };
-Promise.resolve()
+bluebird.resolve()
     .then(() => fs.readJson(historyPath))
     .timeout(5000, 'Timeout loading history file')
     .then(historyJson => history = historyJson)
@@ -29,7 +29,7 @@ Promise.resolve()
         }
     })
     // Run scraping
-    .then(() => Promise.map(config.programs, program => scraper(program, config), {concurrency: 2}))
+    .then(() => bluebird.map(config.programs, program => scraper(program, config), {concurrency: 2}))
     .timeout(30*60*1000, 'Timeout scraping')
     // flatten array of results
     .then(episodes => episodes.reduce((prev, curr) => prev.concat(curr), []))
@@ -45,7 +45,7 @@ Promise.resolve()
         return episodes;
     })
     // Run all downloads
-    .then(episodes => Promise.map(episodes, episode => downloader(episode, config.tmpDir, config.outputBasePath), {concurrency: 2}))
+    .then(episodes => bluebird.map(episodes, episode => downloader(episode, config.tmpDir, config.outputBasePath), {concurrency: 2}))
     .timeout(45*60*1000, 'Timeout downloading')
     // Add successfull downloaded episodes to the history
     .then(downloads => {

@@ -8,7 +8,18 @@ var exec = require('child-process-promise').exec;
 
 const log = require('./logger');
 
-module.exports = function (episode, tmpDir, outputBasePath) {
+type Episode = {
+    date: any;
+    program: {
+        subfolder: any;
+        name: any;
+    };
+    title: any;
+    mediapolisUrl: any;
+    successful: boolean;
+};
+
+export default function (episode: Episode, tmpDir: string, outputBasePath: string) {
     const dateString = moment(episode.date, 'DD/MM/YYYY').format('YYMMDD');
     const destPath = `${outputBasePath}/${sanitize(episode.program.subfolder)}`;
     const filename = `${dateString} - ${sanitize(entities.decode(episode.title))}.mp3`
@@ -31,7 +42,7 @@ module.exports = function (episode, tmpDir, outputBasePath) {
     ]
     const curlCmd = `curl ${curlOpts.join(' ')}`;
     return exec(curlCmd)
-        .then(result => {
+        .then((result: { stdout: any; stderr: any; }) => {
             const { stdout, stderr } = result;
             if (stderr) throw new Error(stderr);
             if (stdout !== '200') throw new Error(stdout);
@@ -45,7 +56,7 @@ module.exports = function (episode, tmpDir, outputBasePath) {
             episode.successful = true;
             return episode;
         })
-        .catch(err => {
+        .catch((err: any) => {
             console.error(`${episode.program.name} - Failed to download episode to ${destPath}/${filename} Error was ${err}`);
             episode.successful = false;
             return episode;
