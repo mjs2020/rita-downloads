@@ -1,49 +1,28 @@
-const request = require('request-promise');
-const cheerio = require('cheerio');
+import { Config, Episode, Program } from "../types";
+import fetch from 'node-fetch';
+import log from './logger';
+import * as cheerio from 'cheerio';
+import { concurrentAsync, timeout } from "./utils";
 
-const log = require('./logger');
-
-const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/gi;
-const regex = new RegExp(urlRegex);
-
-export default function (program: { name: any; url: any; }, config: { jquerySectionSelector: any; }) {
+export default async function (program: Program, config: Config): Promise<Episode[]> {
     log(`${program.name} - Requesting page`);
-    return request(program.url)
-        .then(html => {
-            const $ = cheerio.load(html);
-            const sections = $(config.jquerySectionSelector);
-            if (sections.length) {
-                log(`${program.name} - has ${sections.length} subsections`);
-                return Promise.all(sections.map((i,section) => request(`http://www.raiplayradio.it/${$(section).attr('href')}`).then(html => {
-                    const $ = cheerio.load(html);
-                    return getEpisodes($, config, program);
-                })).get())
-                .then(results => results.reduce((flattened, result) => flattened.concat(result), []));
-            } else {
-                return getEpisodes($, config, program);
-            }
-        })
-        .then(episodes => {
-            log(`${program.name} - Got response with ${episodes.length} episodes`);
-            return episodes;
-        })
-        .catch(err => {
-            console.error(`${program.name} - Error fetching episodes: ${err}`);
-            return [];
-        })
-}
+    const response = await fetch(program.url);
+    const html = await response.text();
+    const $ = cheerio.load(html);
 
-function getEpisodes ($, config, program) {
-    const episodes = $(config.jquerySelector);
-    return episodes.map((i,episode) => ({
-        mediapolisUrl: $(episode).attr('data-mediapolis'),
-        program: program,
-        uniqueName: $(episode).attr('data-uniquename'),
-        title: $(episode).find('h3').text(),
-        date: $(episode).find('span.canale').text()
-    }))
-    // episodes is a cheerio array so we need to run get() to get the actual results of the map
-    .get()
-    // filter out any episodes we did not get a mediapolis url for
-    .filter(episode => episode.mediapolisUrl && episode.mediapolisUrl.match(regex));
+    const episodeUrls = $(config.jquerySelector)
+        .map((i, v) => config.baseUrl + $(v).attr('href')?.replace('.html', '.json'))
+        .toArray();
+    const jsonResponses: Promise<any>[] = (await timeout(concurrentAsync(2, episodeUrls, (url: string) => fetch(url)), 60 * 1000, 'Timeout while scraping'))
+        .map((response: any) => response.json());
+    const episodes: Episode[] = (await Promise.all(jsonResponses))
+        .map((data: any) => ({
+            mediapolisUrl: data.downloadable_audio?.url,
+            program: data.program?.name,
+            uniqueName: data.uniquename,
+            title: data.title,
+            date: data.date_tracking,
+        }));
+    log(`${program.name} - Scraped ${episodes.length} episodes.`);
+    return episodes;
 }

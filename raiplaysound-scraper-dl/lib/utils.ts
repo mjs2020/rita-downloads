@@ -1,3 +1,8 @@
+const {promisify} = require('util')
+const fs = require('fs')
+const readFileAsync = promisify(fs.readFile)
+
+// timeout a promise after a given time
 export async function timeout(promise: Promise<any>, timeout: number, errorMsg: string) {
     return Promise.race([
         promise,
@@ -30,3 +35,8 @@ export async function concurrentAsync(limit: number,
 
     return enqueue().then(() => Promise.all(promises));
 }
+
+export async function readJson(filename: string) {
+    return JSON.parse(await readFileAsync(filename))
+}
+

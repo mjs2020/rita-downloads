@@ -1,0 +1,189 @@
+  {
+    "page_updated": {
+      "date": "14 Marzo 2022",
+      "hour": "17:41"
+    },
+    "uniquename": "ContentItem-f464a407-69ad-4281-aa37-f6cb29a709ff",
+    "type": "RaiPlaySound Audio Item",
+    "create_date": "02-03-2022",
+    "create_time": "17:34",
+    "date_tracking": "2022-03-02",
+    "update_date": "2022-03-08",
+    "title": "Ad alta voce del 02/03/2022",
+    "channel": {
+      "name": "Rai Radio 3",
+      "logo": "/dl/components/img/sound/loghi/logo-rairadio3-transparent.png",
+      "category_path": "radio3",
+      "palinsesto_url": "rai-radio-3",
+      "palinsesto_name": "Radio 3"
+    },
+    "description": "Tersa Saponangelo legge Il paese di Cuccagna di Matilde Serao",
+    "episode_title": "19. Il paese di Cuccagna di Matilde Serao",
+    "episode": "19",
+    "season": "2022",
+    "form": "Integrale",
+    "audio": {
+      "title": "Ad alta voce del 02/03/2022",
+      "poster": "/dl/img/2021/11/29/1638210894856_2048x2048%20ad%20alta%20voce%202.jpg",
+      "url": "https://mediapolisvod.rai.it/relinker/relinkerServlet.htm?cont=3TONQ6mFLw3nKc5PRiEsdQeeqqEEqualeeqqEEqual",
+      "type": "audio",
+      "duration": "00:28:01"
+    },
+    "downloadable_audio": {
+      "title": "Ad alta voce del 02/03/2022",
+      "url": "http://mediapolisvod.rai.it/relinker/relinkerServlet.htm?cont=SHYZK37ssSlash6ssSlashbbR1L6ZBvTCweeqqEEqualeeqqEEqual",
+      "type": "downloadable_audio"
+    },
+    "images": {
+      "square": "/dl/img/2021/11/29/1638210894856_2048x2048%20ad%20alta%20voce%202.jpg",
+      "cover": null,
+      "landscape": null
+    },
+    "image": "/dl/img/2021/11/29/1638210894856_2048x2048%20ad%20alta%20voce%202.jpg",
+    "program": {
+      "id": "Category-9f786bcd-e607-433b-97d8-c90f4385d37b",
+      "name": "Ad alta voce",
+      "pipe": "Ad alta voce|Category-9f786bcd-e607-433b-97d8-c90f4385d37b",
+      "category_path": "adaltavoce",
+      "weblink": "/programmi/adaltavoce",
+      "configuratore": "ContentItem-f57d5153-9c1b-4612-8d24-54a59606a7b3",
+      "contestual_page": "Page-29dce8cd-2ad6-4374-8987-fb6ae64201e1",
+      "path_id": "/programmi/adaltavoce.json"
+    },
+    "genres": [],
+    "subgenres": [],
+    "weblink": "/audio/2022/03/Ad-alta-voce-del-02032022-f464a407-69ad-4281-aa37-f6cb29a709ff.html",
+    "path_id": "/audio/2022/03/Ad-alta-voce-del-02032022-f464a407-69ad-4281-aa37-f6cb29a709ff.json",
+    "literal_publication_date": "02 Mar 2022",
+    "literal_duration": "28 min",
+    "adv": true,
+    "noroll": false,
+    "nofloorad": false,
+    "dfp": {
+      "escaped_name": "Adaltavoce",
+      "label": "cultr",
+      "escaped_genres": [
+        {
+          "id": "Category-ada93711-8e1a-4181-adca-66d9e67d3caa",
+          "name": "Librieletteratura"
+        }
+      ],
+      "escaped_typology": [
+        {
+          "id": "Category-0aa7449f-a576-44ef-b6b3-1ff8e668f245",
+          "name": "Programmiradio"
+        }
+      ]
+    },
+    "poeple": [],
+    "podcast_info": {
+      "uniquename": "ContentItem-f57d5153-9c1b-4612-8d24-54a59606a7b3",
+      "type": "RaiPlaySound Programma Item",
+      "create_date": "28-08-2017",
+      "create_time": "17:18",
+      "year": "2017",
+      "date_tracking": "2017-08-28",
+      "title": "Ad alta voce",
+      "description": "Dai Promessi sposi a Frankestein, da Pinocchio a Raymond Carver... con i suoi romanzi e racconti, Ad Alta Voce è un'immensa biblioteca di audiolibri. A dar voce alle pagine delle letterature del mondo sono le migliori attrici ed attori italiani. In diretta sulle frequenze di Rai Radio 3, dal lunedì al venerdì alle 17.00, in replica la notte alle 1.30. A cura di Fabiana Carobolante con Jacopo de Bertoldi, Luigi Iavarone e Chiara Valerio.",
+      "onair_date": "Dal lunedì al venerdì alle 17.00",
+      "images": {
+        "landscape": "/dl/img/2021/11/29/1638210854839_2048x1152%20ad%20alta%20voce%202.jpg",
+        "landscape_logo": null,
+        "square": "/dl/img/2021/11/29/1638210894856_2048x2048%20ad%20alta%20voce%202.jpg",
+        "square_external": null
+      },
+      "image": "/dl/img/2021/11/29/1638210894856_2048x2048%20ad%20alta%20voce%202.jpg",
+      "weblink": "/programmi/adaltavoce",
+      "path_id": "/programmi/adaltavoce.json",
+      "channel": {
+        "name": "Rai Radio 3",
+        "logo": "/dl/components/img/sound/loghi/logo-rairadio3-transparent.png",
+        "category_path": "radio3",
+        "palinsesto_url": "rai-radio-3",
+        "palinsesto_name": "Radio 3"
+      },
+      "typology": "Programmi radio",
+      "genres": [
+        {
+          "id": "Category-ada93711-8e1a-4181-adca-66d9e67d3caa",
+          "name": "Libri e letteratura",
+          "pipe": "Libri e letteratura|Category-ada93711-8e1a-4181-adca-66d9e67d3caa"
+        }
+      ],
+      "subgenres": [],
+      "editor": "Rai Radio 3",
+      "socials": [],
+      "contacts": {
+        "email": "adaltavoce@rai.it",
+        "phone_number": "sms 3355634296 ",
+        "sms": "3355634296",
+        "whatsapp": "3355634296 ",
+        "newsletter": null
+      },
+      "people": [],
+      "metadata": {
+        "product_sources": [
+          {
+            "id": "Category-4cbb5b4e-f80d-4017-9cc0-f3e7f5cb9437",
+            "name": "Messa in onda Radio",
+            "pipe": "Messa in onda Radio|Category-4cbb5b4e-f80d-4017-9cc0-f3e7f5cb9437",
+            "principal": true
+          }
+        ],
+        "targets": [],
+        "school_levels": [],
+        "languages": [],
+        "audiodescription": []
+      },
+      "adv": true,
+      "noroll": false,
+      "nobanner": false,
+      "nofloorad": false,
+      "play_inverted": true,
+      "dfp": {
+        "escaped_name": "Adaltavoce",
+        "label": "cultr",
+        "escaped_genres": [
+          {
+            "id": "Category-ada93711-8e1a-4181-adca-66d9e67d3caa",
+            "name": "Librieletteratura"
+          }
+        ],
+        "escaped_typology": [
+          {
+            "id": "Category-0aa7449f-a576-44ef-b6b3-1ff8e668f245",
+            "name": "Programmiradio"
+          }
+        ]
+      }
+    },
+    "set_path_id": null,
+    "track_info": {
+      "id": "ContentItem-f464a407-69ad-4281-aa37-f6cb29a709ff",
+      "domain": "raiplaysound",
+      "platform": "[platform]",
+      "media_type": "aod",
+      "page_type": "audio",
+      "editor": "rai radio 3",
+      "section": "audio",
+      "sub_section": "",
+      "content": "pagina foglia",
+      "title": "ad alta voce del 02/03/2022",
+      "channel": "rai radio 3",
+      "date": "2022-03-08",
+      "typology": "programmi radio",
+      "genres": [
+        "libri e letteratura"
+      ],
+      "sub_genres": [],
+      "program_title": "ad alta voce",
+      "program_typology": "programmi radio",
+      "edition": "2022",
+      "season": "2022",
+      "episode_number": "19",
+      "episode_title": "19. il paese di cuccagna di matilde serao",
+      "form": "integrale",
+      "media_name": "raiplaysound - aod - ad alta voce - 19. il paese di cuccagna di matilde serao - ContentItem-f464a407-69ad-4281-aa37-f6cb29a709ff",
+      "page_url": "/audio/2022/03/Ad-alta-voce-del-02032022-f464a407-69ad-4281-aa37-f6cb29a709ff.html"
+    }
+  }
