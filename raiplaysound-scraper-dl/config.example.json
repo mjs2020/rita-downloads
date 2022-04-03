@@ -3,6 +3,7 @@
     "historyPath": "./history.json",
     "tmpDir": "./tmp",
     "downloadsPerRun": 10,
+    "maxRetries": 10,
     "jquerySelector": "article > a",
     "jquerySectionSelector": ".listaStagioniPuntate > li > a",
     "programs": [

@@ -21,7 +21,7 @@ export default async function (episode: Episode, tmpDir: string, outputBasePath:
         await mkdirAsync(destPath, { recursive: true });
     }
     const filename = `${dateString} - ${sanitize(entities.decode(episode.title))}.mp3`
-    log(`${episode.program.name} - Starting download from ${episode.mediapolisUrl} to ${destPath}/${filename}`);
+    log(`${episode.program.name} - Starting download to ${filename}`);
     // download with curl to tmpPath and then move to destPath
     const curlOpts = [
         `'${episode.mediapolisUrl}'`,
@@ -46,10 +46,11 @@ export default async function (episode: Episode, tmpDir: string, outputBasePath:
         if (stdout !== '200') throw new Error(stdout);
         await accessAsync(destPath, fs.constants.W_OK);
         await renameAsync(`${tmpDir}/${filename}`, `${destPath}/${filename}`);
-        log(`${episode.program.name} - Successfully downloaded episode to ${destPath}/${filename}`);
+        log(`${episode.program.name} - Successfully downloaded episode to ${filename}`);
         return { successful: true, episode };
     } catch (err) {
-        console.error(`${episode.program.name} - Failed to download episode to ${destPath}/${filename} Error was ${err}`);
+        console.error(`${episode.program.name} - Failed to download episode from ${episode.mediapolisUrl}  to ${filename}.`);
+        console.error(`Error was ${err}`);
         return { successful: false, episode };
     }
 }

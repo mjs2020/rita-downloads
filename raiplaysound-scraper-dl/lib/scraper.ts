@@ -20,7 +20,7 @@ export default async function (program: Program, config: Config): Promise<Episod
             mediapolisUrl: data.downloadable_audio?.url,
             program: program,
             uniqueName: data.uniquename,
-            title: data.title,
+            title: `${data.title} - ${data.episode_title}`,
             date: data.date_tracking,
         }));
     log(`${program.name} - Scraped ${episodes.length} episodes.`);
