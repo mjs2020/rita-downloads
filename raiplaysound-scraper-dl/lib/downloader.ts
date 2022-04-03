@@ -1,25 +1,17 @@
-const fs = require('fs-extra');
-const moment = require('moment');
+import { DownloadResult, Episode } from "../types";
+import moment from 'moment';
+import sanitize from "sanitize-filename";
+import log from './logger';
+
+const {promisify} = require('util');
+const fs = require('fs');
+const ensureDirAsync = promisify(fs.ensureDir);
+const moveAsync = promisify(fs.move);
 const Entities = require('html-entities').AllHtmlEntities;
 const entities = new Entities();
-const url = require('url');
-const sanitize = require("sanitize-filename");
-var exec = require('child-process-promise').exec;
+const exec = require('child-process-promise').exec;
 
-const log = require('./logger');
-
-type Episode = {
-    date: any;
-    program: {
-        subfolder: any;
-        name: any;
-    };
-    title: any;
-    mediapolisUrl: any;
-    successful: boolean;
-};
-
-export default function (episode: Episode, tmpDir: string, outputBasePath: string) {
+export default async function (episode: Episode, tmpDir: string, outputBasePath: string): Promise<DownloadResult> {
     const dateString = moment(episode.date, 'DD/MM/YYYY').format('YYMMDD');
     const destPath = `${outputBasePath}/${sanitize(episode.program.subfolder)}`;
     const filename = `${dateString} - ${sanitize(entities.decode(episode.title))}.mp3`
@@ -41,24 +33,17 @@ export default function (episode: Episode, tmpDir: string, outputBasePath: strin
         `-o "${tmpDir}/${filename}"`
     ]
     const curlCmd = `curl ${curlOpts.join(' ')}`;
-    return exec(curlCmd)
-        .then((result: { stdout: any; stderr: any; }) => {
-            const { stdout, stderr } = result;
-            if (stderr) throw new Error(stderr);
-            if (stdout !== '200') throw new Error(stdout);
-        })
-        // ensure destination directory exists
-        .then(() => fs.ensureDir(destPath))
-        // move from tmpDir to destination
-        .then(() => fs.move(`${tmpDir}/${filename}`, `${destPath}/${filename}`, { overwrite: true }))
-        .then(() => {
-            log(`${episode.program.name} - Successfully downloaded episode to ${destPath}/${filename}`);
-            episode.successful = true;
-            return episode;
-        })
-        .catch((err: any) => {
-            console.error(`${episode.program.name} - Failed to download episode to ${destPath}/${filename} Error was ${err}`);
-            episode.successful = false;
-            return episode;
-        });
+
+    try {
+        const { stdout, stderr } = await exec(curlCmd);
+        if (stderr) throw new Error(stderr);
+        if (stdout !== '200') throw new Error(stdout);
+        await ensureDirAsync(destPath);
+        await moveAsync(`${tmpDir}/${filename}`, `${destPath}/${filename}`, { overwrite: true });
+        log(`${episode.program.name} - Successfully downloaded episode to ${destPath}/${filename}`);
+        return { successful: true, episode };
+    } catch (err) {
+        console.error(`${episode.program.name} - Failed to download episode to ${destPath}/${filename} Error was ${err}`);
+        return { successful: false, episode };
+    }
 }

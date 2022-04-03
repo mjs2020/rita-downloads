@@ -18,7 +18,7 @@ export default async function (program: Program, config: Config): Promise<Episod
     const episodes: Episode[] = (await Promise.all(jsonResponses))
         .map((data: any) => ({
             mediapolisUrl: data.downloadable_audio?.url,
-            program: data.program?.name,
+            program: program,
             uniqueName: data.uniquename,
             title: data.title,
             date: data.date_tracking,

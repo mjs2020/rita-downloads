@@ -1,78 +1,64 @@
-// External deps
-import path from 'path';
-import fs from 'fs-extra';       // used to have promisified functions and a few extra methods like readJson
-import bluebird from "bluebird"; // used for timeout and concurrency management
+// Types
+import { DownloadResult, DownloadResults, Episode, History, Program } from './types';
 
 // Internal deps
 import scraper from './lib/scraper';
 import downloader from './lib/downloader';
 import log from './lib/logger';
+import { concurrentAsync, loadConfig, loadHistory, timeout, writeHistory } from './lib/utils';
 
 // Load & validate config
-const config = fs.readJsonSync(path.join(__dirname, 'config.json'));
-const {programs, outputBasePath, historyPath, maxRetries, downloadsPerRun} = config;
-if (!config) throw new Error(`config.json undefined. Please set up config.js based on the model in config.example.json`);
-if (!programs) throw new Error(`Missing programs in config. Please set up config.js based on the model in config.example.js`);
-if (!outputBasePath || fs.accessSync(outputBasePath)) throw new Error(`Missing outputBasePath in config or path is not writable. Please set up config.js based on the model in config.example.js`);
-if (!historyPath) throw new Error(`Missing historyPath in config. Please set up config.js based on the model in config.example.js`);
-log(`Config loaded. ${programs.length} programs to scrape.`);
+(async function main () {
+    try {
+        // load config
+        const config = await loadConfig();
+        const {programs, outputBasePath, historyPath, maxRetries, downloadsPerRun, tmpDir} = config;
+        log(`Config loaded. ${programs.length} programs to scrape.`);
+        
+        // load or create history.json
+        const {downloadedEpisodes, failedEpisodes} = await loadHistory(historyPath);
+        log(`History loaded. ${downloadedEpisodes.length} downloaded episodes in history, ${Object.keys(failedEpisodes).length} failed episodes.`);
+        
+        // scrape episodes & filter out ones we've already downloaded or failed too many times
+        const episodes = (await timeout(
+                concurrentAsync<Program, Episode[]>(2, programs, program => scraper(program, config)),
+                30*60*1000, //30 min
+                'Timeout while scraping'
+            ))
+            .reduce((prev: [Episode], curr: Episode) => prev.concat(curr), [])
+            .filter(({uniqueName}: Episode) => !downloadedEpisodes.includes(uniqueName))
+            .filter(({uniqueName}: Episode) => !(failedEpisodes[uniqueName] && failedEpisodes[uniqueName] > maxRetries))
+            .slice(0, downloadsPerRun);
 
-// load or create history.json
-let history = { downloadedEpisodes: [], failedEpisodes: {} };
-bluebird.resolve()
-    .then(() => fs.readJson(historyPath))
-    .timeout(5000, 'Timeout loading history file')
-    .then(historyJson => history = historyJson)
-    .catch(err => {
-        if (err.code !== 'ENOENT') {
-            throw new Error(`Unexpected error when trying to read ./history.json: ${err}`);
-        }
-    })
-    // Run scraping
-    .then(() => bluebird.map(config.programs, program => scraper(program, config), {concurrency: 2}))
-    .timeout(30*60*1000, 'Timeout scraping')
-    // flatten array of results
-    .then(episodes => episodes.reduce((prev, curr) => prev.concat(curr), []))
-    // filter out any that have already been downloaded or that have failed more than the allowed number of retries
-    .then(episodes => episodes.filter(({uniqueName}) => !history.downloadedEpisodes.includes(uniqueName)))
-    .then(episodes => episodes.filter(({uniqueName}) => !(history.failedEpisodes[uniqueName] && history.failedEpisodes[uniqueName]> maxRetries)))
-    // limit to max dls per run
-    .then(episodes => {
-        if (episodes.length > downloadsPerRun) {
-            log(`Found ${episodes.length} that need to be downloaded. Limiting to ${downloadsPerRun} in this run.`);
-            return episodes.slice(0, downloadsPerRun)
-        }
-        return episodes;
-    })
-    // Run all downloads
-    .then(episodes => bluebird.map(episodes, episode => downloader(episode, config.tmpDir, config.outputBasePath), {concurrency: 2}))
-    .timeout(45*60*1000, 'Timeout downloading')
-    // Add successfull downloaded episodes to the history
-    .then(downloads => {
-        // TODO save failed downloads to a separate list and add them to separate file
-        const successfulDownloads = downloads.filter(dl => dl.successful);
-        const failedDownloads = downloads.filter(dl => !dl.successful);
-        log(`Ran ${downloads.length} downloads of which ${successfulDownloads.length} were successful`);
-        successfulDownloads.forEach(dl => {
-            history.downloadedEpisodes.push(dl.uniqueName);
-            delete history.failedEpisodes[dl.uniqueName];
+        // download episodes & split into successful/failed Episode arrays
+        const {successfulDownloads, failedDownloads}: DownloadResults = (await timeout(
+                concurrentAsync<Episode, DownloadResult>(2, episodes, episode => downloader(episode, tmpDir, outputBasePath)),
+                45*60*1000, // 45min
+                'Timeout while downloading'
+            )).reduce((acc: DownloadResults, download: DownloadResult) => {
+                if (download.successful) {
+                    acc.successfulDownloads.push(download.episode);
+                } else {
+                    acc.failedDownloads.push(download.episode);
+                }
+                return acc;
+            }, new DownloadResults);
+        log(`Ran ${successfulDownloads.length+failedDownloads.length} downloads of which ${successfulDownloads.length} were successful`);
+        
+        // write results to history & write history to disk
+        successfulDownloads.forEach(({uniqueName}) => {
+            downloadedEpisodes.push(uniqueName);
+            delete failedEpisodes[uniqueName];
         });
         failedDownloads.forEach(({uniqueName}) => {
-            history.failedEpisodes[uniqueName] = history.failedEpisodes[uniqueName] ? history.failedEpisodes[uniqueName] + 1 : 1;
-        })
-        return fs.writeJson(historyPath, history, {spaces: 2})
-            .then(() => {
-                console.error(`Successfully updated history file.`);
-            })
-            .catch(err => {
-                console.error(`Failed to write history to ${historyPath}. Failed with error: ${err}`);
-            })
-    })
-    .then(() => {
+            failedEpisodes[uniqueName] = failedEpisodes[uniqueName] ? failedEpisodes[uniqueName] + 1 : 1;
+        });
+        await writeHistory(historyPath, {downloadedEpisodes, failedEpisodes});
+        
         log(`Program finished, exiting.`);
         process.exit(0);
-    })
-    .catch(err => {
+    } catch (err) {
         console.error(`Unexpected error: ${err}`);
         process.exit(1);
-    });
+    }
+})();
