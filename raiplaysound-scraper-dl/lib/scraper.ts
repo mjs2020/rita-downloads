@@ -5,7 +5,7 @@ import * as cheerio from 'cheerio';
 import { concurrentAsync, timeout } from "./utils";
 
 export default async function (program: Program, config: Config): Promise<Episode[]> {
-    log(`${program.name} - Requesting page`);
+    log(`${program.name} - Requesting page (${program.url})`);
     const response = await fetch(program.url);
     const html = await response.text();
     const $ = cheerio.load(html);

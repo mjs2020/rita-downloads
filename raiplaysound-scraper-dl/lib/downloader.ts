@@ -2,18 +2,24 @@ import { DownloadResult, Episode } from "../types";
 import moment from 'moment';
 import sanitize from "sanitize-filename";
 import log from './logger';
+import path from 'path';
 
 const {promisify} = require('util');
 const fs = require('fs');
-const ensureDirAsync = promisify(fs.ensureDir);
-const moveAsync = promisify(fs.move);
+const accessAsync = promisify(fs.access);
+const renameAsync = promisify(fs.rename);
+const existsAsync = promisify(fs.exists);
+const mkdirAsync = promisify(fs.mkdir);
 const Entities = require('html-entities').AllHtmlEntities;
 const entities = new Entities();
 const exec = require('child-process-promise').exec;
 
 export default async function (episode: Episode, tmpDir: string, outputBasePath: string): Promise<DownloadResult> {
-    const dateString = moment(episode.date, 'DD/MM/YYYY').format('YYMMDD');
-    const destPath = `${outputBasePath}/${sanitize(episode.program.subfolder)}`;
+    const dateString = moment(episode.date).format('YYMMDD');
+    const destPath = path.join(outputBasePath, sanitize(episode.program.subfolder));
+    if (!await existsAsync(destPath)){
+        await mkdirAsync(destPath, { recursive: true });
+    }
     const filename = `${dateString} - ${sanitize(entities.decode(episode.title))}.mp3`
     log(`${episode.program.name} - Starting download from ${episode.mediapolisUrl} to ${destPath}/${filename}`);
     // download with curl to tmpPath and then move to destPath
@@ -38,8 +44,8 @@ export default async function (episode: Episode, tmpDir: string, outputBasePath:
         const { stdout, stderr } = await exec(curlCmd);
         if (stderr) throw new Error(stderr);
         if (stdout !== '200') throw new Error(stdout);
-        await ensureDirAsync(destPath);
-        await moveAsync(`${tmpDir}/${filename}`, `${destPath}/${filename}`, { overwrite: true });
+        await accessAsync(destPath, fs.constants.W_OK);
+        await renameAsync(`${tmpDir}/${filename}`, `${destPath}/${filename}`);
         log(`${episode.program.name} - Successfully downloaded episode to ${destPath}/${filename}`);
         return { successful: true, episode };
     } catch (err) {

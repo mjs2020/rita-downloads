@@ -6,7 +6,8 @@
   "scripts": {
     "build-production": "webpack --mode=production",
     "build": "webpack --mode=development",
-    "test": "jest --watch"
+    "test": "jest --watch",
+    "run": "ts-node index.ts"
   },
   "author": "Francesco Merletti",
   "dependencies": {

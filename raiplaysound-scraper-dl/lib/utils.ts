@@ -7,7 +7,7 @@ import log from './logger';
 const {promisify} = require('util');
 const fs = require('fs');
 const readFileAsync = promisify(fs.readFile);
-const accessPathAsync = promisify(fs.access);
+const accessAsync = promisify(fs.access);
 const writeFileAsync = promisify(fs.writeFile);
 
 // timeout a promise after a given time
@@ -49,7 +49,7 @@ export async function readJson(filename: string) {
 }
 
 export async function loadConfig(): Promise<Config> {
-    const config: Config = await readJson(path.join(__dirname, 'config.json'));
+    const config: Config = await readJson(path.join(__dirname, '../config.json'));
     await validateConfig(config);
     return config;
 }
@@ -59,13 +59,15 @@ async function validateConfig(config: Config) {
     assert.ok(config, `config.json undefined. Please set up config.js based on the model in config.example.json`);
     assert.ok(programs, `Missing programs in config. Please set up config.js based on the model in config.example.js`);
     assert.ok(outputBasePath, `Missing outputBasePath in config`);
-    assert.ok(await accessPathAsync(outputBasePath), `outputBasePath not writable`);
+    // console.log('output path ', path.join(__dirname, '../', outputBasePath))
+    // assert.ok(await accessAsync(path.join(__dirname, '../', outputBasePath), fs.constants.W_OK), `outputBasePath is not writable`);
     assert.ok(historyPath, `Missing historyPath in config. Please set up config.js based on the model in config.example.js`);
 }
 
 export async function loadHistory(historyPath: string): Promise<History> {
     try {
-        return timeout(readJson(historyPath), 5000, 'Timeout loading history file');
+        const history = await timeout(readJson(path.join(__dirname, '..', historyPath)), 5000, 'Timeout loading history file');
+        return history;
     } catch (err: any) {
         if (err.code !== 'ENOENT') {
             throw new Error(`Unexpected error when trying to read ./history.json: ${err}`);

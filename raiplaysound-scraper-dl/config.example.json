@@ -3,17 +3,17 @@
     "historyPath": "./history.json",
     "tmpDir": "./tmp",
     "downloadsPerRun": 10,
-    "jquerySelector": "div.row.listaAudio",
+    "jquerySelector": "article > a",
     "jquerySectionSelector": ".listaStagioniPuntate > li > a",
     "programs": [
         {
             "name": "Momus",
-            "url": "http://www.raiplayradio.it/programmi/momusilcaffedellopera/archivio/puntate/",
+            "url": "https://www.raiplaysound.it/programmi/momusilcaffedellopera",
             "subfolder": "Momus"
         },
         {
             "name": "Fahrenheit",
-            "url": "http://www.raiplayradio.it/programmi/fahrenheit/archivio/puntate/",
+            "url": "https://www.raiplaysound.it/programmi/fahrenheit",
             "subfolder": "Fahrenheit"
         }
     ]
