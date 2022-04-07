@@ -49,7 +49,7 @@ export async function readJson(filename: string) {
 }
 
 export async function loadConfig(): Promise<Config> {
-    const config: Config = await readJson(path.join(__dirname, '../config.json'));
+    const config: Config = await readJson(path.join(__dirname, 'config.json'));
     await validateConfig(config);
     return config;
 }

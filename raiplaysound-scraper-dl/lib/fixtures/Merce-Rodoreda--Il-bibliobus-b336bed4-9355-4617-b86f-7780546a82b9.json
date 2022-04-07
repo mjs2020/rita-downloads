@@ -1,0 +1,219 @@
+{
+    "page_updated": {
+        "date": "05 Aprile 2022",
+        "hour": "08:42"
+    },
+    "uniquename": "ContentItem-b336bed4-9355-4617-b86f-7780546a82b9",
+    "type": "RaiPlaySound Audio Item",
+    "create_date": "22-03-2022",
+    "create_time": "10:45",
+    "date_tracking": "2022-03-23",
+    "update_date": "2022-03-23",
+    "title": "Mercè Rodoreda | Il bibliobus",
+    "channel": {
+        "name": "Rai Radio 3",
+        "logo": "/dl/components/img/sound/loghi/logo-rairadio3-transparent.png",
+        "category_path": "radio3",
+        "palinsesto_url": "rai-radio-3",
+        "palinsesto_name": "Radio 3",
+        "hex_color": "#01b36e"
+    },
+    "description": "Il capolavoro La piazza del diamante scritto in esilio a Ginevra per sfuggire al franchismo. Il giro della Catalogna con il bibliobus con i libri per chi militava nel fronte repubblicano, la fuga, la paura, il lavoro da sarta e i vent'anni passati senza scrivere prima di tornare a farlo, accecata dalla passione.  ",
+    "episode_title": "3. Mercè Rodoreda | Il bibliobus",
+    "episode": "3",
+    "season": "2021-22",
+    "form": "Clip",
+    "audio": {
+        "title": "Mercè Rodoreda | Il bibliobus",
+        "url": "https://mediapolisvod.rai.it/relinker/relinkerServlet.htm?cont=lQkxGTX86T5jO2KcLDUqUgeeqqEEqualeeqqEEqual",
+        "type": "audio",
+        "duration": null
+    },
+    "downloadable_audio": {
+        "title": "Mercè Rodoreda | Il bibliobus",
+        "url": "http://mediapolisvod.rai.it/relinker/relinkerServlet.htm?cont=vssSlashWy8dGoQNSFGMO92dThssSlashAeeqqEEqualeeqqEEqual",
+        "type": "downloadable_audio"
+    },
+    "images": {
+        "square": "/dl/img/2021/12/07/1638887704278_2048x2048%20gettoni%20di%20letteratura.jpg",
+        "cover": null,
+        "landscape": null
+    },
+    "image": "/dl/img/2021/12/07/1638887704278_2048x2048%20gettoni%20di%20letteratura.jpg",
+    "program": {
+        "id": "Category-1fbe798e-f5e0-473c-bcae-175ec77ec76e",
+        "name": "Gettoni di Letteratura",
+        "pipe": "Gettoni di Letteratura|Category-1fbe798e-f5e0-473c-bcae-175ec77ec76e",
+        "category_path": "gettonidiletteratura",
+        "weblink": "/programmi/gettonidiletteratura",
+        "configuratore": "ContentItem-d883e358-2f23-4445-a705-c02f06062f4a",
+        "contestual_page": "Page-03b841ba-e78f-4af3-a82b-46b8c2f8c0ed",
+        "path_id": "/programmi/gettonidiletteratura.json"
+    },
+    "genres": [
+        {
+            "id": "Category-ada93711-8e1a-4181-adca-66d9e67d3caa",
+            "name": "Libri e letteratura",
+            "pipe": "Libri e letteratura|Category-ada93711-8e1a-4181-adca-66d9e67d3caa",
+            "principal": true
+        }
+    ],
+    "subgenres": [
+        {
+            "id": "Category-ee9dcf72-d2f8-4496-b358-ff0841b3a4ae",
+            "name": "Letteratura straniera",
+            "pipe": "Letteratura straniera|Category-ee9dcf72-d2f8-4496-b358-ff0841b3a4ae",
+            "principal": true
+        }
+    ],
+    "weblink": "/audio/2022/03/Merce-Rodoreda--Il-bibliobus-b336bed4-9355-4617-b86f-7780546a82b9.html",
+    "path_id": "/audio/2022/03/Merce-Rodoreda--Il-bibliobus-b336bed4-9355-4617-b86f-7780546a82b9.json",
+    "literal_publication_date": "23 Mar 2022",
+    "literal_duration": null,
+    "adv": true,
+    "noroll": false,
+    "nofloorad": false,
+    "dfp": {
+        "escaped_name": "GettonidiLetteratura",
+        "label": "cultr",
+        "escaped_genres": [
+            {
+                "id": "Category-ada93711-8e1a-4181-adca-66d9e67d3caa",
+                "name": "Librieletteratura"
+            }
+        ],
+        "escaped_typology": [
+            {
+                "id": "Category-200ddceb-b367-4461-8e1c-c9dd769b288d",
+                "name": "Serieaudio"
+            }
+        ]
+    },
+    "poeple": [],
+    "podcast_info": {
+        "uniquename": "ContentItem-d883e358-2f23-4445-a705-c02f06062f4a",
+        "type": "RaiPlaySound Programma Item",
+        "create_date": "06-12-2017",
+        "create_time": "16:44",
+        "year": "2017",
+        "date_tracking": "2017-12-06",
+        "title": "Gettoni di Letteratura",
+        "description": "Un gettone per telefonare. Un gettone per riascoltare una vecchia canzone. O alcuni attimi della vita di un grande scrittore: Emily Dickinson, Tommaso Landolfi, Etty Hillesum, Joseph Conrad e tanti altri. Cinque immagini, cinque istantanee, cinque aspetti poco noti di una vita. Uno a settimana, raccontato in tre minuti al giorno. Una rubrica di Florinda Fiamma.",
+        "onair_date": null,
+        "images": {
+            "landscape": "/dl/img/2021/12/07/1638887687716_2048x1152%20gettoni%20di%20letteratura.jpg",
+            "landscape_logo": null,
+            "square": "/dl/img/2021/12/07/1638887704278_2048x2048%20gettoni%20di%20letteratura.jpg",
+            "square_external": null
+        },
+        "image": "/dl/img/2021/12/07/1638887704278_2048x2048%20gettoni%20di%20letteratura.jpg",
+        "weblink": "/programmi/gettonidiletteratura",
+        "path_id": "/programmi/gettonidiletteratura.json",
+        "channel": {
+            "name": "Rai Radio 3",
+            "logo": "/dl/components/img/sound/loghi/logo-rairadio3-transparent.png",
+            "category_path": "radio3",
+            "palinsesto_url": "rai-radio-3",
+            "palinsesto_name": "Radio 3"
+        },
+        "typology": "Serie audio",
+        "genres": [
+            {
+                "id": "Category-ada93711-8e1a-4181-adca-66d9e67d3caa",
+                "name": "Libri e letteratura",
+                "pipe": "Libri e letteratura|Category-ada93711-8e1a-4181-adca-66d9e67d3caa"
+            }
+        ],
+        "subgenres": [
+            {
+                "id": "Category-86cde379-3c79-489e-b75c-2a1a16469fe9",
+                "name": "Biografico",
+                "pipe": "Biografico|Category-86cde379-3c79-489e-b75c-2a1a16469fe9"
+            }
+        ],
+        "editor": "Rai Radio 3",
+        "socials": [],
+        "contacts": {
+            "email": null,
+            "phone_number": null,
+            "sms": null,
+            "whatsapp": null,
+            "newsletter": null
+        },
+        "people": [
+            {
+                "image": "/dl/img/2022/01/29/1643489202127_Florinda%20Fiamma.png",
+                "name": "Florinda Fiamma",
+                "type": "RaiPlaySound Personaggio Item",
+                "uniquename": "ContentItem-7bc70f34-34f7-43ab-9b20-b0418867ceba",
+                "role": "conduttrice"
+            }
+        ],
+        "metadata": {
+            "product_sources": [
+                {
+                    "id": "Category-4cbb5b4e-f80d-4017-9cc0-f3e7f5cb9437",
+                    "name": "Messa in onda Radio",
+                    "pipe": "Messa in onda Radio|Category-4cbb5b4e-f80d-4017-9cc0-f3e7f5cb9437",
+                    "principal": true
+                }
+            ],
+            "targets": [],
+            "school_levels": [],
+            "languages": [],
+            "audiodescription": []
+        },
+        "adv": true,
+        "noroll": false,
+        "nobanner": false,
+        "nofloorad": false,
+        "play_inverted": false,
+        "dfp": {
+            "escaped_name": "GettonidiLetteratura",
+            "label": "cultr",
+            "escaped_genres": [
+                {
+                    "id": "Category-ada93711-8e1a-4181-adca-66d9e67d3caa",
+                    "name": "Librieletteratura"
+                }
+            ],
+            "escaped_typology": [
+                {
+                    "id": "Category-200ddceb-b367-4461-8e1c-c9dd769b288d",
+                    "name": "Serieaudio"
+                }
+            ]
+        }
+    },
+    "set_path_id": null,
+    "track_info": {
+        "id": "ContentItem-b336bed4-9355-4617-b86f-7780546a82b9",
+        "domain": "raiplaysound",
+        "platform": "[platform]",
+        "media_type": "aod",
+        "page_type": "audio",
+        "editor": "rai radio 3",
+        "section": "audio",
+        "sub_section": "",
+        "content": "pagina foglia",
+        "title": "mercè rodoreda | il bibliobus",
+        "channel": "rai radio 3",
+        "date": "2022-03-23",
+        "typology": "serie audio",
+        "genres": [
+            "libri e letteratura"
+        ],
+        "sub_genres": [
+            "letteratura straniera"
+        ],
+        "program_title": "gettoni di letteratura",
+        "program_typology": "serie audio",
+        "edition": "2021-22",
+        "season": "2021-22",
+        "episode_number": "3",
+        "episode_title": "3. mercè rodoreda | il bibliobus",
+        "form": "clip",
+        "media_name": "raiplaysound - aod - gettoni di letteratura - 3. mercè rodoreda | il bibliobus - ContentItem-b336bed4-9355-4617-b86f-7780546a82b9",
+        "page_url": "/audio/2022/03/Merce-Rodoreda--Il-bibliobus-b336bed4-9355-4617-b86f-7780546a82b9.html"
+    }
+}

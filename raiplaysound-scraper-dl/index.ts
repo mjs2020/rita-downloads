@@ -15,8 +15,6 @@ import { concurrentAsync, loadConfig, loadHistory, timeout, writeHistory } from 
         // load config
         const config = await loadConfig();
         const {programs, outputBasePath, historyPath, maxRetries, downloadsPerRun, tmpDir} = config;
-        const outputFullPath = path.join(__dirname, outputBasePath);
-        const tmpFullPath = path.join(__dirname, tmpDir);
         log(`Config loaded. ${programs.length} programs to scrape.`);
         
         // load or create history.json
@@ -36,7 +34,7 @@ import { concurrentAsync, loadConfig, loadHistory, timeout, writeHistory } from 
 
         // download episodes & split into successful/failed Episode arrays
         const {successfulDownloads, failedDownloads}: DownloadResults = (await timeout(
-                concurrentAsync<Episode, DownloadResult>(2, episodes, episode => downloader(episode, tmpFullPath, outputFullPath)),
+                concurrentAsync<Episode, DownloadResult>(2, episodes, episode => downloader(episode, tmpDir, outputBasePath)),
                 45*60*1000, // 45min
                 'Timeout while downloading'
             )).reduce((acc: DownloadResults, download: DownloadResult) => {
