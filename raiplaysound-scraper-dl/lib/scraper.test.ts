@@ -15,7 +15,6 @@ describe('scraper', () => {
         const config: Config = {
             programs: [program],
             outputBasePath: 'dummy',
-            historyPath: 'dummy',
             tmpDir: 'dummy',
             baseUrl: 'dummybase',
             jquerySelector: 'article > a',
@@ -177,7 +176,6 @@ describe('scraper', () => {
         const config: Config = {
             programs: [program],
             outputBasePath: 'dummy',
-            historyPath: 'dummy',
             tmpDir: 'dummy',
             baseUrl: 'dummybase',
             jquerySelector: 'article > a',

@@ -7,7 +7,6 @@ import log from './logger';
 const {promisify} = require('util');
 const fs = require('fs');
 const readFileAsync = promisify(fs.readFile);
-const accessAsync = promisify(fs.access);
 const writeFileAsync = promisify(fs.writeFile);
 
 // timeout a promise after a given time
@@ -55,33 +54,42 @@ export async function loadConfig(): Promise<Config> {
 }
 
 async function validateConfig(config: Config) {
-    const {programs, outputBasePath, historyPath} = config;
+    const {programs, outputBasePath} = config;
     assert.ok(config, `config.json undefined. Please set up config.js based on the model in config.example.json`);
     assert.ok(programs, `Missing programs in config. Please set up config.js based on the model in config.example.js`);
     assert.ok(outputBasePath, `Missing outputBasePath in config`);
     // console.log('output path ', path.join(__dirname, '../', outputBasePath))
     // assert.ok(await accessAsync(path.join(__dirname, '../', outputBasePath), fs.constants.W_OK), `outputBasePath is not writable`);
-    assert.ok(historyPath, `Missing historyPath in config. Please set up config.js based on the model in config.example.js`);
 }
 
-export async function loadHistory(historyPath: string): Promise<History> {
+export async function loadHistory(): Promise<History> {
     try {
-        const history = await timeout(readJson(path.join(__dirname, '..', historyPath)), 5000, 'Timeout loading history file');
+        const history = await timeout(readJson(path.join(__dirname, 'history.json')), 5000, 'Timeout loading history file');
+        log(`History loaded. ${history.downloadedEpisodes.length} downloaded episodes in history, ${Object.keys(history.failedEpisodes).length} failed episodes.`);
         return history;
     } catch (err: any) {
         if (err.code !== 'ENOENT') {
             throw new Error(`Unexpected error when trying to read ./history.json: ${err}`);
         }
     }
+    log(`Could not find history file, initialising empty one`);
     return { downloadedEpisodes: [], failedEpisodes: {} };
 }
 
-export async function writeHistory(historyPath: string, history: History): Promise<void> {
+export async function writeHistory(history: History): Promise<void> {
     try {
-        await writeFileAsync(historyPath, JSON.stringify(history, null, 2));
+        await writeFileAsync(path.join(__dirname, 'history.json'), JSON.stringify(history, null, 2));
         log(`Successfully updated history file.`);
     } catch (err) {
-        console.error(`Failed to write history to ${historyPath}. Failed with error: ${err}`);
+        console.error(`Failed to write history. Failed with error: ${err}`);
         throw err;
     }
+}
+
+export async function iterateAsync<T1, T2>(items: T1[], itereatorFn: (item: T1) => Promise<T2>): Promise<T2[]> {
+    const results = []
+    for (let item of items) {
+        results.push(await itereatorFn(item));
+    }
+    return results;
 }

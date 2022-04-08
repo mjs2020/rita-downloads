@@ -2,10 +2,9 @@ import { Config, Episode, Program } from "../types";
 import fetch from 'node-fetch';
 import log from './logger';
 import * as cheerio from 'cheerio';
-import { concurrentAsync, timeout } from "./utils";
+import { iterateAsync, timeout } from "./utils";
 
 export default async function scrape (program: Program, config: Config): Promise<Episode[]> {
-    log(`${program.name} - Requesting page (${program.url})`);
     const response = await fetch(program.url);
     const html = await response.text();
     const $ = cheerio.load(html);
@@ -30,7 +29,11 @@ export default async function scrape (program: Program, config: Config): Promise
         episodesFromPlayslits = episodesFromPlayslits.concat(await scrape({...program, url}, config));
     }
 
-    const jsonResponses: Promise<any>[] = (await timeout(concurrentAsync(2, episodeUrls, (url: string) => fetch(url)), 60 * 1000, 'Timeout while scraping'))
+    const jsonResponses: Promise<any>[] = (await timeout(
+            iterateAsync(episodeUrls, (url) => fetch(url)),
+            10 * 60 * 1000,
+            `Timeout while gathering json repsponses for ${program.name}`)
+        )
         .map((response: any) => response.json());
     const episodes: Episode[] = (await Promise.all(jsonResponses))
         .map((data: any) => ({
@@ -40,6 +43,6 @@ export default async function scrape (program: Program, config: Config): Promise
             title: `${data.title} - ${data.episode_title}`,
             date: data.date_tracking,
         }));
-    log(`${program.name} - Scraped ${episodes.length} episodes.`);
+    log(`${program.name} (${program.url}) - Scraped ${episodes.length} episodes.`);
     return [...episodes, ...episodesFromPlayslits];
 }

@@ -7,7 +7,6 @@ export type Program = {
 export type Config = {
     programs: Program[];
     outputBasePath: string;
-    historyPath: string;
     baseUrl: string;
     tmpDir: string;
     jquerySelector: string;

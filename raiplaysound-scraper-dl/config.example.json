@@ -1,6 +1,5 @@
 {
     "outputBasePath": "./downloads",
-    "historyPath": "./history.json",
     "tmpDir": "./tmp",
     "downloadsPerRun": 10,
     "maxRetries": 10,
