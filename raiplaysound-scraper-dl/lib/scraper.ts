@@ -37,12 +37,13 @@ export default async function scrape (program: Program, config: Config): Promise
         .map((response: any) => response.json());
     const episodes: Episode[] = (await Promise.all(jsonResponses))
         .map((data: any) => ({
-            mediapolisUrl: data.downloadable_audio?.url,
+            mediapolisUrl: data.downloadable_audio?.url || data.audio?.url,
             program: program,
             uniqueName: data.uniquename,
             title: `${data.title} - ${data.episode_title}`,
             date: data.date_tracking,
-        }));
+        }))
+        .filter(e => !!e.mediapolisUrl);
     log(`${program.name} (${program.url}) - Scraped ${episodes.length} episodes.`);
     return [...episodes, ...episodesFromPlayslits];
 }
