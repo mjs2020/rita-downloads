@@ -34,7 +34,11 @@ import moment from 'moment';
         const episodesToDownload = newEpisodes.sort((a: Episode, b: Episode) => moment(b.date).unix() - moment(a.date).unix())
             .slice(0, downloadsPerRun);
 
+        log('');
+        log('----------------------------------------');
         log(`Total of ${scrapedEpisodes.length} scraped, ${newEpisodes.length} new ones, downloading ${episodesToDownload.length}`);
+        log('----------------------------------------');
+        log('');
 
         // download episodes & split into successful/failed Episode arrays
         const {successfulDownloads, failedDownloads}: DownloadResults = (await timeout(
