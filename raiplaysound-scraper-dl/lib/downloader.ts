@@ -20,7 +20,7 @@ export default async function (episode: Episode, tmpDir: string, outputBasePath:
     if (!await existsAsync(destPath)){
         await mkdirAsync(destPath, { recursive: true });
     }
-    const filename = `${dateString} - ${sanitize(entities.decode(episode.title))}.mp3`
+    const filename = `${dateString} - ${sanitize(entities.decode(episode.title)).slice(0,120)}.mp3`
     log(`${episode.program.name} - Starting download to ${filename}`);
     // download with curl to tmpPath and then move to destPath
     const curlOpts = [
