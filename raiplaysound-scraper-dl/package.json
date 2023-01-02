@@ -27,7 +27,7 @@
     "@types/jest": "^27.0.3",
     "@types/node-fetch": "^2.6.1",
     "babel-jest": "^27.5.1",
-    "babel-loader": "^8.2.3",
+    "babel-loader": "^8.3.0",
     "jest": "^27.5.1",
     "source-map-loader": "^3.0.1",
     "ts-jest": "^27.1.3",
