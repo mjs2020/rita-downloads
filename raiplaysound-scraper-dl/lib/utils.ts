@@ -4,7 +4,7 @@ import assert from 'assert';
 import { Config, History } from "../types";
 import log from './logger';
 
-const {promisify} = require('util');
+const { promisify } = require('util');
 const fs = require('fs');
 const readFileAsync = promisify(fs.readFile);
 const writeFileAsync = promisify(fs.writeFile);
@@ -17,9 +17,9 @@ export async function timeout<T>(promise: Promise<T>, timeout: number, errorMsg:
     ]);
 }
 
-export async function concurrentAsync<T1, T2>(limit: number, 
-                                      items: Array<T1>,
-                                      itereatorFn: (item: T1) => Promise<T2>): Promise<T2[]> {
+export async function concurrentAsync<T1, T2>(limit: number,
+    items: Array<T1>,
+    itereatorFn: (item: T1) => Promise<T2>): Promise<T2[]> {
     let idx = 0;
     const running: Array<Promise<any>> = [];
     const promises: Array<Promise<any>> = [];
@@ -27,7 +27,7 @@ export async function concurrentAsync<T1, T2>(limit: number,
     if (limit >= items.length) {
         return Promise.all(items.map(i => itereatorFn(i)));
     }
-    
+
     const enqueue: () => Promise<any> = async () => {
         if (idx === items.length) {
             return Promise.resolve();
@@ -54,7 +54,7 @@ export async function loadConfig(): Promise<Config> {
 }
 
 async function validateConfig(config: Config) {
-    const {programs, outputBasePath} = config;
+    const { programs, outputBasePath } = config;
     assert.ok(config, `config.json undefined. Please set up config.js based on the model in config.example.json`);
     assert.ok(programs, `Missing programs in config. Please set up config.js based on the model in config.example.js`);
     assert.ok(outputBasePath, `Missing outputBasePath in config`);
@@ -89,7 +89,11 @@ export async function writeHistory(history: History): Promise<void> {
 export async function iterateAsync<T1, T2>(items: T1[], itereatorFn: (item: T1) => Promise<T2>): Promise<T2[]> {
     const results = []
     for (let item of items) {
-        results.push(await itereatorFn(item));
+        try {
+            results.push(await itereatorFn(item));
+        } catch (e: any) {
+            console.log(`ERROR: ${e.message}`)
+        }
     }
     return results;
 }
