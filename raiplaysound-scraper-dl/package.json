@@ -14,7 +14,7 @@
     "cheerio": "^1.0.0-rc.2",
     "child-process-promise": "^2.2.1",
     "html-entities": "^1.2.1",
-    "moment": "^2.20.1",
+    "moment": "^2.29.4",
     "node-fetch": "^2.6.7",
     "sanitize-filename": "^1.6.1"
   },
