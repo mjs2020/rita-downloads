@@ -10,7 +10,7 @@ This is a simple node script designed to run on a synology NAS to automatically 
 
 ## Deploy to diskstation
 
-Run `npm run build` and copy `build/bundle.js` to the diskstation.
+Run `npm run build-production` and copy `build/bundle.js` to the diskstation.
 
 ## Running as a cron task on a Synology DSM
 
@@ -34,6 +34,8 @@ A hierarchy of pages:
 * The script takes as input via config a programme url such as: [Fahrenheit](https://www.raiplaysound.it/programmi/fahrenheit)
 * Looks for subsections such as [2021 Il libro del giorno](https://www.raiplaysound.it/programmi/fahrenheit/puntata-/2021-il-libro-del-giorno-).
 * For each, if any additional, subsection including the main page it scrapes the [episode link](https://www.raiplaysound.it/audio/2021/12/Fahrenheit-del-28122021-340fadbf-7bda-4358-8933-a4d803d1451c.html)
+
+Link discovery is handled in code. The scraper only considers same-origin links and only treats RaiPlay Sound episode and nested programme paths as candidates.
 
 Getting the Mp3
 

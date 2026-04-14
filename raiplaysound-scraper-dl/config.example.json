@@ -1,10 +1,9 @@
 {
+    "baseUrl": "https://www.raiplaysound.it",
     "outputBasePath": "./downloads",
     "tmpDir": "./tmp",
     "downloadsPerRun": 10,
     "maxRetries": 10,
-    "jquerySelector": "article > a",
-    "jquerySectionSelector": ".listaStagioniPuntate > li > a",
     "programs": [
         {
             "name": "Momus",

@@ -7,9 +7,8 @@ export type Program = {
 export type Config = {
     programs: Program[];
     outputBasePath: string;
-    baseUrl: string;
+    baseUrl?: string;
     tmpDir: string;
-    jquerySelector: string;
     maxRetries: number;
     downloadsPerRun: number;
 };

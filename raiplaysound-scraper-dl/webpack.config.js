@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 
 module.exports = {
     entry: path.resolve(__dirname, 'index.js'),
@@ -30,5 +31,10 @@ module.exports = {
         'electron': 'electron',
         'spawn-sync': 'spawn-sync'
     },
-    target: 'node'
+    target: 'node',
+    plugins: [
+        new webpack.DefinePlugin({
+            __APP_VERSION__: JSON.stringify(process.env.npm_package_version || 'dev'),
+        }),
+    ]
 };

@@ -16,6 +16,8 @@ import moment from 'moment';
         // load config
         const config = await loadConfig();
         const {programs, outputBasePath, maxRetries, downloadsPerRun, tmpDir} = config;
+        const version = __APP_VERSION__;
+        log(`raiplaysound-scraper v${version}`);
         log(`Config loaded. ${programs.length} programs to scrape.`);
         
         // load or create history.json
