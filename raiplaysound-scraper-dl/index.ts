@@ -7,8 +7,11 @@ import { DownloadResult, DownloadResults, Episode } from './types';
 import scraper from './lib/scraper';
 import downloader from './lib/downloader';
 import log from './lib/logger';
-import { iterateAsync, loadConfig, loadHistory, timeout, writeHistory } from './lib/utils';
+import { concurrentAsync, iterateAsync, loadConfig, loadHistory, timeout, writeHistory } from './lib/utils';
 import moment from 'moment';
+
+const DEFAULT_PROGRAM_CONCURRENCY = 2;
+const DEFAULT_SCRAPE_TIMEOUT_MS = 30*60*1000;
 
 // Load & validate config
 (async function main () {
@@ -16,17 +19,20 @@ import moment from 'moment';
         // load config
         const config = await loadConfig();
         const {programs, outputBasePath, maxRetries, downloadsPerRun, tmpDir} = config;
+        const programConcurrency = Math.max(1, config.programConcurrency || DEFAULT_PROGRAM_CONCURRENCY);
+        const scrapeTimeoutMs = Math.max(60*1000, config.scrapeTimeoutMs || DEFAULT_SCRAPE_TIMEOUT_MS);
         const version = __APP_VERSION__;
         log(`raiplaysound-scraper v${version}`);
         log(`Config loaded. ${programs.length} programs to scrape.`);
+        log(`Scrape concurrency: programs=${programConcurrency}, pages=${Math.max(1, config.pageConcurrency || 4)}, json=${Math.max(1, config.jsonConcurrency || 4)}, requestTimeoutMs=${Math.max(1000, config.requestTimeoutMs || 20000)}, scrapeTimeoutMs=${scrapeTimeoutMs}`);
         
         // load or create history.json
         const {downloadedEpisodes, failedEpisodes} = await loadHistory();
         
         // scrape episodes & filter out ones we've already downloaded or failed too many times
         const scrapedEpisodes = (await timeout(
-                iterateAsync(programs, program => scraper(program, config)),
-                30*60*1000, //30 min
+                concurrentAsync(programConcurrency, programs, program => scraper(program, config)),
+                scrapeTimeoutMs,
                 'Timeout while scraping programs'
             ))
             .reduce((prev: [Episode], curr: Episode) => prev.concat(curr), [])

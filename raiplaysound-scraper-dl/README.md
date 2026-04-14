@@ -37,6 +37,8 @@ A hierarchy of pages:
 
 Link discovery is handled in code. The scraper only considers same-origin links and only treats RaiPlay Sound episode and nested programme paths as candidates.
 
+Scraping uses bounded concurrency with separate limits for top-level programs, nested programme pages and episode JSON requests. Individual requests also time out independently so a few slow pages do not block the whole run.
+
 Getting the Mp3
 
 * Replacing the episode link `.html` with `.json` you get a parsable representation with a `.downloadable_audio.url` param we can use.

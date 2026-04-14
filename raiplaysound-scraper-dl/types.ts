@@ -11,6 +11,11 @@ export type Config = {
     tmpDir: string;
     maxRetries: number;
     downloadsPerRun: number;
+    programConcurrency?: number;
+    pageConcurrency?: number;
+    jsonConcurrency?: number;
+    requestTimeoutMs?: number;
+    scrapeTimeoutMs?: number;
 };
 
 export type Episode = {

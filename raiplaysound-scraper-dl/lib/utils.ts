@@ -20,27 +20,41 @@ export async function timeout<T>(promise: Promise<T>, timeout: number, errorMsg:
 export async function concurrentAsync<T1, T2>(limit: number,
     items: Array<T1>,
     itereatorFn: (item: T1) => Promise<T2>): Promise<T2[]> {
+    const safeLimit = Math.max(1, limit);
     let idx = 0;
     const running: Array<Promise<any>> = [];
     const promises: Array<Promise<any>> = [];
 
-    if (limit >= items.length) {
-        return Promise.all(items.map(i => itereatorFn(i)));
+    const runItem = async (item: T1): Promise<T2 | undefined> => {
+        try {
+            return await itereatorFn(item);
+        } catch (e: any) {
+            console.log(`ERROR: ${e.message}`);
+            return undefined;
+        }
+    };
+
+    if (safeLimit >= items.length) {
+        const results = await Promise.all(items.map(i => runItem(i)));
+        return results.filter(result => result !== undefined) as T2[];
     }
 
     const enqueue: () => Promise<any> = async () => {
         if (idx === items.length) {
             return Promise.resolve();
         }
-        const promise = itereatorFn(items[idx++]);
+        const promise = runItem(items[idx++]);
         promises.push(promise);
         running.push(promise.finally(() => running.splice(running.indexOf(promise), 1)));
 
-        return (running.length >= limit ? Promise.race(running) : Promise.resolve())
+        return (running.length >= safeLimit ? Promise.race(running) : Promise.resolve())
             .finally(() => enqueue());
     }
 
-    return enqueue().then(() => Promise.all(promises));
+    return enqueue().then(async () => {
+        const results = await Promise.all(promises);
+        return results.filter(result => result !== undefined) as T2[];
+    });
 }
 
 export async function readJson(filename: string) {

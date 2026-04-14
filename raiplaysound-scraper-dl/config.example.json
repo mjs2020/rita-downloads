@@ -4,6 +4,11 @@
     "tmpDir": "./tmp",
     "downloadsPerRun": 10,
     "maxRetries": 10,
+    "programConcurrency": 2,
+    "pageConcurrency": 3,
+    "jsonConcurrency": 4,
+    "requestTimeoutMs": 20000,
+    "scrapeTimeoutMs": 1800000,
     "programs": [
         {
             "name": "Momus",

@@ -3,9 +3,12 @@ import fetch from 'node-fetch';
 import log from './logger';
 import * as cheerio from 'cheerio';
 import { URL } from 'url';
-import { iterateAsync, timeout } from "./utils";
+import { concurrentAsync, timeout } from "./utils";
 
 const DISCOVERY_SELECTOR = 'a[href], [href]';
+const DEFAULT_PAGE_CONCURRENCY = 4;
+const DEFAULT_JSON_CONCURRENCY = 4;
+const DEFAULT_REQUEST_TIMEOUT_MS = 20000;
 
 function getBaseUrl(program: Program, config: Config): string {
     if (config.baseUrl) {
@@ -65,14 +68,62 @@ function isSameOriginUrl(url: string, program: Program, config: Config): boolean
     }
 }
 
+function getPageConcurrency(config: Config): number {
+    return Math.max(1, config.pageConcurrency || DEFAULT_PAGE_CONCURRENCY);
+}
+
+function getJsonConcurrency(config: Config): number {
+    return Math.max(1, config.jsonConcurrency || DEFAULT_JSON_CONCURRENCY);
+}
+
+function getRequestTimeoutMs(config: Config): number {
+    return Math.max(1000, config.requestTimeoutMs || DEFAULT_REQUEST_TIMEOUT_MS);
+}
+
+async function fetchTextWithTimeout(url: string, config: Config): Promise<string> {
+    const response = await timeout(
+        fetch(url),
+        getRequestTimeoutMs(config),
+        `Timeout fetching ${url}`
+    );
+    return timeout(
+        response.text(),
+        getRequestTimeoutMs(config),
+        `Timeout reading HTML from ${url}`
+    );
+}
+
+async function fetchEpisode(url: string, program: Program, config: Config): Promise<Episode | null> {
+    const response = await timeout(
+        fetch(url),
+        getRequestTimeoutMs(config),
+        `Timeout fetching episode JSON ${url}`
+    );
+    const data = await timeout(
+        response.json(),
+        getRequestTimeoutMs(config),
+        `Timeout reading episode JSON ${url}`
+    );
+    const mediapolisUrl = data.downloadable_audio?.url || data.audio?.url;
+    if (!mediapolisUrl) {
+        return null;
+    }
+    return {
+        mediapolisUrl,
+        program,
+        uniqueName: data.uniquename,
+        title: `${data.title} - ${data.episode_title}`,
+        date: data.date_tracking,
+    };
+}
+
 async function scrapePage(program: Program, config: Config, visitedPages: Set<string>): Promise<Episode[]> {
     if (visitedPages.has(program.url)) {
         return [];
     }
     visitedPages.add(program.url);
 
-    const response = await fetch(program.url);
-    const html = await response.text();
+    const html = await fetchTextWithTimeout(program.url, config);
     const $ = cheerio.load(html);
 
     const episodeUrls: string[] = [];
@@ -103,26 +154,18 @@ async function scrapePage(program: Program, config: Config, visitedPages: Set<st
             }
         });
 
-    let episodesFromNestedPages: Episode[] = [];
-    for (let url of [...new Set(nestedPageUrls)]) {
-        episodesFromNestedPages = episodesFromNestedPages.concat(await scrapePage({...program, url}, config, visitedPages));
-    }
+    const nestedPageResults = await concurrentAsync(
+        getPageConcurrency(config),
+        [...new Set(nestedPageUrls)],
+        (url) => scrapePage({ ...program, url }, config, visitedPages)
+    );
+    const episodesFromNestedPages = nestedPageResults.reduce((all, current) => all.concat(current), [] as Episode[]);
 
-    const jsonResponses: Promise<any>[] = (await timeout(
-            iterateAsync([...new Set(episodeUrls)], (url) => fetch(url)),
-            10 * 60 * 1000,
-            `Timeout while gathering json repsponses for ${program.name}`)
-        )
-        .map((response: any) => response.json());
-    const episodes: Episode[] = (await Promise.all(jsonResponses))
-        .map((data: any) => ({
-            mediapolisUrl: data.downloadable_audio?.url || data.audio?.url,
-            program: program,
-            uniqueName: data.uniquename,
-            title: `${data.title} - ${data.episode_title}`,
-            date: data.date_tracking,
-        }))
-        .filter(e => !!e.mediapolisUrl);
+    const episodes = (await concurrentAsync(
+        getJsonConcurrency(config),
+        [...new Set(episodeUrls)],
+        (url) => fetchEpisode(url, program, config)
+    )).filter((episode): episode is Episode => !!episode);
     log(`${program.name} (${program.url}) - Found ${candidateUrlCount} candidate URLs, scraped ${episodes.length} episodes.`);
     return [...episodes, ...episodesFromNestedPages];
 }
