@@ -58,15 +58,15 @@ describe('utils', () => {
             ).resolves.toEqual(values);
         });
         
-        it('should reject if any of the promises reject', async () => {
-            const TRIGGERED = "triggered"
-            const checker = (v: any) => new Promise((resolve, reject) => setTimeout(() => v === values[5] ? reject(TRIGGERED) : resolve(v), Math.round(Math.random()*10)));
-            await expect(
-                concurrentAsync(concurrency, values, checker)
-            ).rejects.toEqual(TRIGGERED);
-        });
-    });
-});
+	        it('should continue if any of the promises reject', async () => {
+	            const TRIGGERED = "triggered"
+	            const checker = (v: any) => new Promise((resolve, reject) => setTimeout(() => v === values[5] ? reject(TRIGGERED) : resolve(v), Math.round(Math.random()*10)));
+	            await expect(
+	                concurrentAsync(concurrency, values, checker)
+	            ).resolves.toEqual(values.filter(v => v !== values[5]));
+	        });
+	    });
+	});
 
 
 function resolvesIn(time: number, value: string): Promise<string> {

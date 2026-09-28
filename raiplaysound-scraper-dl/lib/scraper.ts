@@ -1,14 +1,26 @@
 import { Config, Episode, Program } from "../types";
 import fetch from 'node-fetch';
 import log from './logger';
-import * as cheerio from 'cheerio';
 import { URL } from 'url';
-import { concurrentAsync, timeout } from "./utils";
+import { concurrentAsync, sleep } from "./utils";
+import * as http from 'http';
+import * as https from 'https';
 
-const DISCOVERY_SELECTOR = 'a[href], [href]';
 const DEFAULT_PAGE_CONCURRENCY = 4;
 const DEFAULT_JSON_CONCURRENCY = 4;
 const DEFAULT_REQUEST_TIMEOUT_MS = 20000;
+const DEFAULT_REQUEST_RETRIES = 2;
+const DEFAULT_MAX_PAGES_PER_PROGRAM = 80;
+
+const httpAgent = new http.Agent({ keepAlive: true });
+const httpsAgent = new https.Agent({ keepAlive: true });
+
+const DEFAULT_HEADERS: Record<string, string> = {
+    'Cache-Control': 'no-cache',
+    'DNT': '1',
+    'Accept-Language': 'en-GB,en;q=0.9,en-US;q=0.8,it;q=0.7',
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+};
 
 function getBaseUrl(program: Program, config: Config): string {
     if (config.baseUrl) {
@@ -80,30 +92,122 @@ function getRequestTimeoutMs(config: Config): number {
     return Math.max(1000, config.requestTimeoutMs || DEFAULT_REQUEST_TIMEOUT_MS);
 }
 
-async function fetchTextWithTimeout(url: string, config: Config): Promise<string> {
-    const response = await timeout(
-        fetch(url),
-        getRequestTimeoutMs(config),
-        `Timeout fetching ${url}`
-    );
-    return timeout(
-        response.text(),
-        getRequestTimeoutMs(config),
-        `Timeout reading HTML from ${url}`
-    );
+function getRequestRetries(config: Config): number {
+    // Number of retries (not counting the initial attempt)
+    return Math.max(0, config.requestRetries ?? DEFAULT_REQUEST_RETRIES);
+}
+
+function getMaxPagesPerProgram(config: Config): number {
+    return Math.max(1, config.maxPagesPerProgram ?? DEFAULT_MAX_PAGES_PER_PROGRAM);
+}
+
+function getFetchAgent(url: string) {
+    return (new URL(url)).protocol === 'http:' ? httpAgent : httpsAgent;
+}
+
+function backoffMs(attempt: number): number {
+    // attempt: 0 = first retry delay
+    const base = Math.min(10_000, 500 * Math.pow(2, attempt));
+    const jitter = Math.floor(Math.random() * 250);
+    return base + jitter;
+}
+
+async function fetchWithTimeout(url: string, config: Config): Promise<any> {
+    const timeoutMs = getRequestTimeoutMs(config);
+    const controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    let timer: any;
+    try {
+        const fetchPromise = fetch(url, {
+            headers: DEFAULT_HEADERS,
+            // node-fetch v2 supports `agent` as a function or as an Agent
+            agent: getFetchAgent(url) as any,
+            signal: controller?.signal as any,
+        } as any);
+
+        if (!controller) {
+            // Best-effort timeout on older Node runtimes: this does not cancel the underlying request.
+            return await Promise.race([
+                fetchPromise,
+                new Promise((_resolve, reject) => {
+                    timer = setTimeout(() => reject(new Error(`Timeout fetching ${url}`)), timeoutMs);
+                }),
+            ]);
+        }
+
+        timer = setTimeout(() => controller.abort(), timeoutMs);
+        return await fetchPromise;
+    } catch (err: any) {
+        // Ensure timeout failures surface as a stable message (helps logs/tests and makes retries clearer).
+        if (err?.name === 'AbortError') {
+            throw new Error(`Timeout fetching ${url}`);
+        }
+        throw err;
+    } finally {
+        if (timer) {
+            clearTimeout(timer);
+        }
+    }
+}
+
+async function fetchText(url: string, config: Config): Promise<string> {
+    let lastErr: any;
+    const retries = getRequestRetries(config);
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            const response = await fetchWithTimeout(url, config);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status} fetching ${url}`);
+            }
+            return await response.text();
+        } catch (err: any) {
+            lastErr = err;
+            if (attempt < retries) {
+                await sleep(backoffMs(attempt));
+                continue;
+            }
+        }
+    }
+    throw lastErr;
+}
+
+async function fetchJson(url: string, config: Config): Promise<any> {
+    let lastErr: any;
+    const retries = getRequestRetries(config);
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            const response = await fetchWithTimeout(url, config);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status} fetching ${url}`);
+            }
+            return await response.json();
+        } catch (err: any) {
+            lastErr = err;
+            if (attempt < retries) {
+                await sleep(backoffMs(attempt));
+                continue;
+            }
+        }
+    }
+    throw lastErr;
+}
+
+function extractHrefsFromHtml(html: string): string[] {
+    // Keep this intentionally simple and allocation-light:
+    // scan for href="..." / href='...' / href=unquoted and capture the raw value.
+    const hrefs: string[] = [];
+    const re = /\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(html)) !== null) {
+        const href = match[1] || match[2] || match[3];
+        if (href) {
+            hrefs.push(href);
+        }
+    }
+    return hrefs;
 }
 
 async function fetchEpisode(url: string, program: Program, config: Config): Promise<Episode | null> {
-    const response = await timeout(
-        fetch(url),
-        getRequestTimeoutMs(config),
-        `Timeout fetching episode JSON ${url}`
-    );
-    const data = await timeout(
-        response.json(),
-        getRequestTimeoutMs(config),
-        `Timeout reading episode JSON ${url}`
-    );
+    const data = await fetchJson(url, config);
     const mediapolisUrl = data.downloadable_audio?.url || data.audio?.url;
     if (!mediapolisUrl) {
         return null;
@@ -117,59 +221,94 @@ async function fetchEpisode(url: string, program: Program, config: Config): Prom
     };
 }
 
-async function scrapePage(program: Program, config: Config, visitedPages: Set<string>): Promise<Episode[]> {
-    if (visitedPages.has(program.url)) {
-        return [];
-    }
-    visitedPages.add(program.url);
+export default async function scrape (program: Program, config: Config): Promise<Episode[]> {
+    const visitedPages = new Set<string>();
+    const queuedPages = new Set<string>();
+    const pageQueue: string[] = [];
 
-    const html = await fetchTextWithTimeout(program.url, config);
-    const $ = cheerio.load(html);
+    // Keep episode discovery order stable, and keep the page URL context (used by tests/logging).
+    const episodeJsonUrls: string[] = [];
+    const episodeJsonSeen = new Set<string>();
+    const episodeContextPage = new Map<string, string>();
 
-    const episodeUrls: string[] = [];
-    const nestedPageUrls: string[] = [];
     let candidateUrlCount = 0;
 
-    const discoveredUrls = $(DISCOVERY_SELECTOR)
-        .map((i, v) => $(v).attr('href'))
-        .toArray()
-        .filter((url): url is string => !!url);
+    const enqueuePage = (pageUrl: string) => {
+        if (visitedPages.has(pageUrl) || queuedPages.has(pageUrl)) {
+            return;
+        }
+        queuedPages.add(pageUrl);
+        pageQueue.push(pageUrl);
+    };
 
-    discoveredUrls.forEach(url => {
-            if (!isSameOriginUrl(url, program, config)) {
-                return;
+    enqueuePage(program.url);
+
+    const maxPages = getMaxPagesPerProgram(config);
+    while (pageQueue.length > 0 && visitedPages.size < maxPages) {
+        const batch = pageQueue.splice(0, getPageConcurrency(config));
+
+        const batchResults = await concurrentAsync(
+            batch.length,
+            batch,
+            async (pageUrl) => {
+                try {
+                    const html = await fetchText(pageUrl, config);
+                    return { pageUrl, hrefs: extractHrefsFromHtml(html) };
+                } catch (err: any) {
+                    // Mark as visited with no discoveries on repeated failures/timeouts.
+                    log(`ERROR: ${err?.message || err}`);
+                    return { pageUrl, hrefs: [] as string[] };
+                }
             }
+        );
 
-            const episodeUrl = getEpisodeJsonUrl(url, program, config);
-            if (episodeUrl) {
-                candidateUrlCount++;
-                episodeUrls.push(episodeUrl);
-                return;
+        for (const result of batchResults) {
+            const { pageUrl, hrefs } = result as any as { pageUrl: string, hrefs: string[] };
+            queuedPages.delete(pageUrl);
+            if (visitedPages.has(pageUrl)) {
+                continue;
             }
+            visitedPages.add(pageUrl);
 
-            const nestedPageUrl = getNestedPageUrl(url, program, config);
-            if (nestedPageUrl) {
-                candidateUrlCount++;
-                nestedPageUrls.push(nestedPageUrl);
+            const contextProgram = { ...program, url: pageUrl };
+            for (const url of hrefs) {
+                if (!isSameOriginUrl(url, contextProgram, config)) {
+                    continue;
+                }
+
+                const episodeUrl = getEpisodeJsonUrl(url, contextProgram, config);
+                if (episodeUrl) {
+                    candidateUrlCount++;
+                    if (!episodeJsonSeen.has(episodeUrl)) {
+                        episodeJsonSeen.add(episodeUrl);
+                        episodeJsonUrls.push(episodeUrl);
+                        episodeContextPage.set(episodeUrl, pageUrl);
+                    }
+                    continue;
+                }
+
+                const nestedPageUrl = getNestedPageUrl(url, contextProgram, config);
+                if (nestedPageUrl) {
+                    candidateUrlCount++;
+                    enqueuePage(nestedPageUrl);
+                }
             }
-        });
+        }
+    }
 
-    const nestedPageResults = await concurrentAsync(
-        getPageConcurrency(config),
-        [...new Set(nestedPageUrls)],
-        (url) => scrapePage({ ...program, url }, config, visitedPages)
-    );
-    const episodesFromNestedPages = nestedPageResults.reduce((all, current) => all.concat(current), [] as Episode[]);
+    if (visitedPages.size >= maxPages && pageQueue.length > 0) {
+        log(`${program.name} (${program.url}) - Reached maxPagesPerProgram=${maxPages}, stopping page discovery early.`);
+    }
 
     const episodes = (await concurrentAsync(
         getJsonConcurrency(config),
-        [...new Set(episodeUrls)],
-        (url) => fetchEpisode(url, program, config)
+        episodeJsonUrls,
+        (episodeUrl) => {
+            const contextUrl = episodeContextPage.get(episodeUrl) || program.url;
+            return fetchEpisode(episodeUrl, { ...program, url: contextUrl }, config);
+        }
     )).filter((episode): episode is Episode => !!episode);
-    log(`${program.name} (${program.url}) - Found ${candidateUrlCount} candidate URLs, scraped ${episodes.length} episodes.`);
-    return [...episodes, ...episodesFromNestedPages];
-}
 
-export default async function scrape (program: Program, config: Config): Promise<Episode[]> {
-    return scrapePage(program, config, new Set<string>());
+    log(`${program.name} (${program.url}) - Visited ${visitedPages.size} pages, found ${candidateUrlCount} candidate URLs, scraped ${episodes.length} episodes.`);
+    return episodes;
 }

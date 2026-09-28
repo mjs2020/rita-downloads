@@ -4,10 +4,12 @@
     "tmpDir": "./tmp",
     "downloadsPerRun": 10,
     "maxRetries": 10,
-    "programConcurrency": 2,
+    "programConcurrency": 1,
     "pageConcurrency": 3,
-    "jsonConcurrency": 4,
+    "jsonConcurrency": 3,
     "requestTimeoutMs": 20000,
+    "requestRetries": 2,
+    "maxPagesPerProgram": 80,
     "scrapeTimeoutMs": 1800000,
     "programs": [
         {

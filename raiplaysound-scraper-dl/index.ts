@@ -28,19 +28,26 @@ const DEFAULT_SCRAPE_TIMEOUT_MS = 30*60*1000;
         
         // load or create history.json
         const {downloadedEpisodes, failedEpisodes} = await loadHistory();
-        
+        const downloadedEpisodeSet = new Set(downloadedEpisodes);
+	        
         // scrape episodes & filter out ones we've already downloaded or failed too many times
-        const scrapedEpisodes = (await timeout(
+        const scrapedEpisodeGroups = (await timeout(
                 concurrentAsync(programConcurrency, programs, program => scraper(program, config)),
                 scrapeTimeoutMs,
                 'Timeout while scraping programs'
-            ))
-            .reduce((prev: [Episode], curr: Episode) => prev.concat(curr), [])
-        const newEpisodes = scrapedEpisodes
-            .filter(({uniqueName}: Episode) => !downloadedEpisodes.includes(uniqueName))
-            .filter(({uniqueName}: Episode) => !(failedEpisodes[uniqueName] && failedEpisodes[uniqueName] > maxRetries))
-        const episodesToDownload = newEpisodes.sort((a: Episode, b: Episode) => moment(b.date).unix() - moment(a.date).unix())
-            .slice(0, downloadsPerRun);
+            )) as Episode[][];
+	        const scrapedEpisodes: Episode[] = [];
+            for (const group of scrapedEpisodeGroups) {
+                if (group && group.length) {
+                    scrapedEpisodes.push(...group);
+                }
+            }
+
+	        const newEpisodes = scrapedEpisodes
+	            .filter(({uniqueName}: Episode) => !downloadedEpisodeSet.has(uniqueName))
+	            .filter(({uniqueName}: Episode) => !(failedEpisodes[uniqueName] && failedEpisodes[uniqueName] > maxRetries))
+	        const episodesToDownload = newEpisodes.sort((a: Episode, b: Episode) => moment(b.date).unix() - moment(a.date).unix())
+	            .slice(0, downloadsPerRun);
 
         log('');
         log('----------------------------------------');

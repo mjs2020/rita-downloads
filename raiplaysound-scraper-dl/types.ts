@@ -15,6 +15,8 @@ export type Config = {
     pageConcurrency?: number;
     jsonConcurrency?: number;
     requestTimeoutMs?: number;
+    requestRetries?: number;
+    maxPagesPerProgram?: number;
     scrapeTimeoutMs?: number;
 };
 

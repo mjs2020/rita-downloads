@@ -11,54 +11,63 @@ const writeFileAsync = promisify(fs.writeFile);
 
 // timeout a promise after a given time
 export async function timeout<T>(promise: Promise<T>, timeout: number, errorMsg: string): Promise<T | any> {
-    return Promise.race([
-        promise,
-        new Promise((_resolve, reject) => setTimeout(() => reject(new Error(errorMsg)), timeout))
-    ]);
+    let timer: any;
+    const timeoutPromise = new Promise((_resolve, reject) => {
+        timer = setTimeout(() => reject(new Error(errorMsg)), timeout);
+    });
+    try {
+        return await Promise.race([promise, timeoutPromise]);
+    } finally {
+        if (timer) {
+            clearTimeout(timer);
+        }
+    }
 }
 
 export async function concurrentAsync<T1, T2>(limit: number,
     items: Array<T1>,
     itereatorFn: (item: T1) => Promise<T2>): Promise<T2[]> {
     const safeLimit = Math.max(1, limit);
-    let idx = 0;
-    const running: Array<Promise<any>> = [];
-    const promises: Array<Promise<any>> = [];
+    if (items.length === 0) {
+        return [];
+    }
+
+    // Worker-pool implementation:
+    // - only keeps `safeLimit` in-flight Promises instead of O(items.length)
+    // - preserves input order for successful results
+    const results: Array<T2 | undefined> = new Array(items.length);
+    let nextIndex = 0;
 
     const runItem = async (item: T1): Promise<T2 | undefined> => {
         try {
             return await itereatorFn(item);
         } catch (e: any) {
-            console.log(`ERROR: ${e.message}`);
+            console.log(`ERROR: ${e?.message || e}`);
             return undefined;
         }
     };
 
-    if (safeLimit >= items.length) {
-        const results = await Promise.all(items.map(i => runItem(i)));
-        return results.filter(result => result !== undefined) as T2[];
-    }
-
-    const enqueue: () => Promise<any> = async () => {
-        if (idx === items.length) {
-            return Promise.resolve();
+    const worker = async (): Promise<void> => {
+        while (true) {
+            const currentIndex = nextIndex++;
+            if (currentIndex >= items.length) {
+                return;
+            }
+            results[currentIndex] = await runItem(items[currentIndex]);
         }
-        const promise = runItem(items[idx++]);
-        promises.push(promise);
-        running.push(promise.finally(() => running.splice(running.indexOf(promise), 1)));
+    };
 
-        return (running.length >= safeLimit ? Promise.race(running) : Promise.resolve())
-            .finally(() => enqueue());
-    }
-
-    return enqueue().then(async () => {
-        const results = await Promise.all(promises);
-        return results.filter(result => result !== undefined) as T2[];
-    });
+    const workerCount = Math.min(safeLimit, items.length);
+    await Promise.all(Array.from({ length: workerCount }, () => worker()));
+    return results.filter((r): r is T2 => r !== undefined);
 }
 
 export async function readJson(filename: string) {
     return JSON.parse(await readFileAsync(filename))
+}
+
+export async function sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 export async function loadConfig(): Promise<Config> {
