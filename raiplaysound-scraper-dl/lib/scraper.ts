@@ -310,5 +310,16 @@ export default async function scrape (program: Program, config: Config): Promise
     )).filter((episode): episode is Episode => !!episode);
 
     log(`${program.name} (${program.url}) - Visited ${visitedPages.size} pages, found ${candidateUrlCount} candidate URLs, scraped ${episodes.length} episodes.`);
+
+    // Filter by fromDate if configured
+    if (program.fromDate) {
+        const cutoff = new Date(program.fromDate);
+        const before = episodes.filter(e => e.date < cutoff);
+        if (before.length > 0) {
+            log(`${program.name} - Filtered out ${before.length} episodes before ${program.fromDate}`);
+        }
+        return episodes.filter(e => e.date >= cutoff);
+    }
+
     return episodes;
 }

@@ -1,13 +1,15 @@
 import path from 'path';
 import assert from 'assert';
+import { rename } from 'fs';
+import { promisify } from 'util';
 
 import { Config, History } from "../types";
 import log from './logger';
 
-const { promisify } = require('util');
 const fs = require('fs');
 const readFileAsync = promisify(fs.readFile);
 const writeFileAsync = promisify(fs.writeFile);
+const renameAsync = promisify(rename);
 
 // timeout a promise after a given time
 export async function timeout<T>(promise: Promise<T>, timeout: number, errorMsg: string): Promise<T | any> {
@@ -88,7 +90,10 @@ async function validateConfig(config: Config) {
 export async function loadHistory(): Promise<History> {
     try {
         const history = await timeout(readJson(path.join(__dirname, 'history.json')), 5000, 'Timeout loading history file');
-        log(`History loaded. ${history.downloadedEpisodes.length} downloaded episodes in history, ${Object.keys(history.failedEpisodes).length} failed episodes.`);
+        // Migrate old schema (no taskQueue / programLastScraped)
+        if (!history.taskQueue) history.taskQueue = [];
+        if (!history.programLastScraped) history.programLastScraped = {};
+        log(`History loaded. ${history.downloadedEpisodes.length} downloaded episodes in history, ${Object.keys(history.failedEpisodes).length} failed episodes, ${history.taskQueue.length} in queue.`);
         return history;
     } catch (err: any) {
         if (err.code !== 'ENOENT') {
@@ -96,12 +101,15 @@ export async function loadHistory(): Promise<History> {
         }
     }
     log(`Could not find history file, initialising empty one`);
-    return { downloadedEpisodes: [], failedEpisodes: {} };
+    return { downloadedEpisodes: [], failedEpisodes: {}, taskQueue: [], programLastScraped: {} };
 }
 
 export async function writeHistory(history: History): Promise<void> {
     try {
-        await writeFileAsync(path.join(__dirname, 'history.json'), JSON.stringify(history, null, 2));
+        const historyPath = path.join(__dirname, 'history.json');
+        const tmpPath = historyPath + '.tmp';
+        await writeFileAsync(tmpPath, JSON.stringify(history, null, 2));
+        await renameAsync(tmpPath, historyPath);
         log(`Successfully updated history file.`);
     } catch (err) {
         console.error(`Failed to write history. Failed with error: ${err}`);

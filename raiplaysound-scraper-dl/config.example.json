@@ -4,6 +4,8 @@
     "tmpDir": "./tmp",
     "downloadsPerRun": 10,
     "maxRetries": 10,
+    "scrapeInterval": 86400000,
+    "programsPerScrape": 5,
     "programConcurrency": 1,
     "pageConcurrency": 3,
     "jsonConcurrency": 3,
@@ -21,6 +23,12 @@
             "name": "Fahrenheit",
             "url": "https://www.raiplaysound.it/programmi/fahrenheit",
             "subfolder": "Fahrenheit"
+        },
+        {
+            "name": "NewProgram",
+            "url": "https://www.raiplaysound.it/programmi/newprogram",
+            "subfolder": "NewProgram",
+            "fromDate": "2024-01-01"
         }
     ]
 }

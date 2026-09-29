@@ -76,6 +76,7 @@ typings/
 config.json
 downloads/*
 history.json
+history.json.tmp
 build/*
 
 *.js

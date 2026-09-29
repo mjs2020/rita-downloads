@@ -2,7 +2,7 @@ const path = require('path');
 const webpack = require('webpack');
 
 module.exports = {
-    entry: path.resolve(__dirname, 'index.js'),
+    entry: path.resolve(__dirname, 'index.ts'),
 	output: {
         filename: 'bundle.js',
         path: path.resolve(__dirname, 'build')
@@ -11,13 +11,20 @@ module.exports = {
         __dirname: false
     },
     resolve: {
-        extensions: ['.js', '.json']
+        extensions: ['.ts', '.js', '.json']
     },
 	module: {
 		rules: [
             {
                 test: /\.ts$/,
-                loader: 'babel-loader'
+                loader: 'babel-loader',
+                options: {
+                    presets: [
+                        ['@babel/preset-env', { targets: { node: 'current' } }],
+                        '@babel/preset-typescript'
+                    ],
+                    plugins: ['@babel/plugin-transform-runtime']
+                }
             },
 			{ 
                 test: /\.js$/, 
