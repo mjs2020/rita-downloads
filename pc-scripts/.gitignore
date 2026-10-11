@@ -1,0 +1,13 @@
+# Credentials & environment overrides
+config.local.json
+
+# Binaries & archives
+*.exe
+*.zip
+
+# Audio snapshot profile
+*.spr
+
+# Logs (if added)
+*.log
+*.txt
