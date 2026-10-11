@@ -7,6 +7,48 @@ const { Response } = jest.requireActual('node-fetch');
 
 describe('scraper', () => {
 
+    beforeEach(() => jest.resetAllMocks());
+
+    it('discovers custom-component links and legacy archive subsections, normalises URLs and filters dates', async () => {
+        const program: Program = { name: 'Pagina 3', url: 'https://dummybase/programmi/pagina3', subfolder: 'Pagina 3', fromDate: '2026-09-01' };
+        const config: Config = { programs: [program], outputBasePath: 'dummy', tmpDir: 'dummy', maxRetries: 0, downloadsPerRun: 1, requestRetries: 0 };
+        const pages: Record<string, string> = {
+            [program.url]: `<rps-cta-link weblink="/audio/2026/09/latest.html"></rps-cta-link>
+                <a href="https://dummybase/audio/2026/09/latest.html?source=home&amp;x=1#play">Duplicate</a>
+                <rps-cta-link weblink="//dummybase/programmi/pagina3/puntata-/2025/">Archive</rps-cta-link>
+                <a href="https://external/audio/foreign.html">External</a>
+                <a href="/programmi/other/puntata-/2025">Other programme</a>`,
+            'https://dummybase/programmi/pagina3/puntata-/2025': `<rps-cta-link weblink="https://dummybase/audio/2025/01/old.html"></rps-cta-link>`,
+        };
+        const mockFetch = fetch as unknown as jest.Mock;
+        mockFetch.mockImplementation(url => {
+            if (pages[url]) return Promise.resolve(new Response(pages[url]));
+            if (url === 'https://dummybase/audio/2026/09/latest.json' || url === 'https://dummybase/audio/2025/01/old.json') {
+                return Promise.resolve(new Response(JSON.stringify({
+                    uniquename: url, title: 'Pagina 3', episode_title: 'Episode',
+                    date_tracking: url.includes('/2026/') ? '2026-09-30' : '2025-01-01',
+                    audio: { url: 'https://media/audio.mp3' },
+                })));
+            }
+            throw new Error(`Unexpected request ${url}`);
+        });
+        const episodes = await scraper(program, config);
+        expect(episodes.map(e => e.uniqueName)).toEqual(['https://dummybase/audio/2026/09/latest.json']);
+        expect(mockFetch.mock.calls.map(call => call[0])).toEqual([
+            program.url, 'https://dummybase/programmi/pagina3/puntata-/2025',
+            'https://dummybase/audio/2026/09/latest.json', 'https://dummybase/audio/2025/01/old.json',
+        ]);
+    });
+
+    it('never exceeds the page limit even when page concurrency is higher', async () => {
+        const program: Program = { name: 'dummy', url: 'https://dummybase/programmi/dummy', subfolder: 'dummy' };
+        const config: Config = { programs: [program], outputBasePath: 'dummy', tmpDir: 'dummy', maxRetries: 0, downloadsPerRun: 1, maxPagesPerProgram: 2, pageConcurrency: 3 };
+        const mockFetch = fetch as unknown as jest.Mock;
+        mockFetch.mockImplementation(() => Promise.resolve(new Response('<a href="/playlist/one">1</a><a href="/playlist/two">2</a><a href="/playlist/three">3</a>')));
+        await scraper(program, config);
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
     const fetchResponse = (file: string): Promise<any> =>
         Promise.resolve(new Response(fs.readFileSync(file)));
 

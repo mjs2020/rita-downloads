@@ -35,7 +35,9 @@ A hierarchy of pages:
 * Looks for subsections such as [2021 Il libro del giorno](https://www.raiplaysound.it/programmi/fahrenheit/puntata-/2021-il-libro-del-giorno-).
 * For each, if any additional, subsection including the main page it scrapes the [episode link](https://www.raiplaysound.it/audio/2021/12/Fahrenheit-del-28122021-340fadbf-7bda-4358-8933-a4d803d1451c.html)
 
-Link discovery is handled in code. The scraper only considers same-origin links and only treats RaiPlay Sound episode and nested programme paths as candidates.
+Link discovery reads both ordinary `href` links and the `weblink` attributes used by RaiPlay Sound custom components. It follows same-origin episode links, playlists, audiobooks and programme subsections, including older archive paths. `maxPagesPerProgram` limits page discovery; the log reports when this limit leaves pages unvisited.
+
+Set `downloadsPerRun` above zero to enable downloads (`0` performs scraping only). When deploying, copy `build/bundle.js` and update the NAS config as needed, keeping the existing `history.json`. Previously scraped programmes become eligible again after `scrapeInterval` (24 hours in the example config).
 
 Scraping uses bounded concurrency with separate limits for top-level programs, nested programme pages and episode JSON requests. Individual requests also time out independently so a few slow pages do not block the whole run.
 

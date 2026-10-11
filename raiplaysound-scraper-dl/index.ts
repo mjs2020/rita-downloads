@@ -93,6 +93,13 @@ const DEFAULT_PROGRAMS_PER_SCRAPE = 5;
         
         // --- Download phase ---
         if (taskQueue.length > 0) {
+            const exhaustedEpisodes = taskQueue.filter(({uniqueName}) => failedEpisodes[uniqueName] > maxRetries);
+            if (exhaustedEpisodes.length > 0) {
+                log(`Skipping ${exhaustedEpisodes.length} queued episodes that exceeded maxRetries=${maxRetries}. They remain in history but will not be attempted again unless their failure counts are reset or maxRetries is increased.`);
+                for (const episode of exhaustedEpisodes) {
+                    log(`${episode.program.name} - Retry limit reached for ${episode.uniqueName}: ${failedEpisodes[episode.uniqueName]} failed attempts (${episode.title}).`);
+                }
+            }
             let toDownload = taskQueue.filter(({uniqueName}) =>
                 !(failedEpisodes[uniqueName] && failedEpisodes[uniqueName] > maxRetries)
             );

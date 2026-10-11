@@ -5,6 +5,9 @@ import { URL } from 'url';
 import { concurrentAsync, sleep } from "./utils";
 import * as http from 'http';
 import * as https from 'https';
+import { AllHtmlEntities } from 'html-entities';
+
+const entities = new AllHtmlEntities();
 
 const DEFAULT_PAGE_CONCURRENCY = 4;
 const DEFAULT_JSON_CONCURRENCY = 4;
@@ -33,6 +36,9 @@ function getBaseUrl(program: Program, config: Config): string {
 }
 
 function normaliseUrl(url: string, program: Program, config: Config): string {
+    if (url.startsWith('//')) {
+        return new URL(url, getBaseUrl(program, config)).toString();
+    }
     if (url.startsWith('http://') || url.startsWith('https://')) {
         return url;
     }
@@ -49,21 +55,27 @@ function normaliseUrl(url: string, program: Program, config: Config): string {
 }
 
 function getEpisodeJsonUrl(url: string, program: Program, config: Config): string | null {
-    if (!url.startsWith('/audio/')) {
+    const parsed = new URL(normaliseUrl(url, program, config));
+    if (!/^\/audio\/.+\.(html|json)$/.test(parsed.pathname)) {
         return null;
     }
-    return normaliseUrl(url.replace('.html', '.json'), program, config);
+    parsed.pathname = parsed.pathname.replace(/\.html$/, '.json');
+    parsed.search = '';
+    parsed.hash = '';
+    return parsed.toString();
 }
 
-function getNestedPageUrl(url: string, program: Program, config: Config): string | null {
-    if (url.startsWith('/playlist/')) {
-        return normaliseUrl(url, program, config);
-    }
-    if (/^\/programmi\/[^/]+\/(audiolibri|playlist|clip|extra|novita|episodi)$/.test(url)) {
-        return normaliseUrl(url, program, config);
-    }
-    if (/^\/audiolibri\/[^/]+$/.test(url)) {
-        return normaliseUrl(url, program, config);
+function getNestedPageUrl(url: string, program: Program, config: Config, rootProgram: Program): string | null {
+    const parsed = new URL(normaliseUrl(url, program, config));
+    const pathname = parsed.pathname.replace(/\/$/, '');
+    const rootPath = new URL(normaliseUrl(rootProgram.url, rootProgram, config)).pathname.replace(/\/$/, '');
+    if (/^\/(playlist|audiolibri)\/[^/]+$/.test(pathname)
+        || /^\/programmi\/[^/]+\/(audiolibri|playlist|clip|extra|novita|episodi)$/.test(pathname)
+        || (pathname.startsWith(`${rootPath}/`) && !/\.[^/]+$/.test(pathname))) {
+        parsed.pathname = pathname;
+        parsed.search = '';
+        parsed.hash = '';
+        return parsed.toString();
     }
     return null;
 }
@@ -192,15 +204,15 @@ async function fetchJson(url: string, config: Config): Promise<any> {
 }
 
 function extractHrefsFromHtml(html: string): string[] {
-    // Keep this intentionally simple and allocation-light:
-    // scan for href="..." / href='...' / href=unquoted and capture the raw value.
+    // Rai's custom components expose episode and archive links through weblink.
+    // Match complete attribute names so xlink:href/data-href are not mistaken for links.
     const hrefs: string[] = [];
-    const re = /\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
+    const re = /\s(?:href|weblink)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
     let match: RegExpExecArray | null;
     while ((match = re.exec(html)) !== null) {
         const href = match[1] || match[2] || match[3];
         if (href) {
-            hrefs.push(href);
+            hrefs.push(entities.decode(href));
         }
     }
     return hrefs;
@@ -245,7 +257,7 @@ export default async function scrape (program: Program, config: Config): Promise
 
     const maxPages = getMaxPagesPerProgram(config);
     while (pageQueue.length > 0 && visitedPages.size < maxPages) {
-        const batch = pageQueue.splice(0, getPageConcurrency(config));
+        const batch = pageQueue.splice(0, Math.min(getPageConcurrency(config), maxPages - visitedPages.size));
 
         const batchResults = await concurrentAsync(
             batch.length,
@@ -287,7 +299,7 @@ export default async function scrape (program: Program, config: Config): Promise
                     continue;
                 }
 
-                const nestedPageUrl = getNestedPageUrl(url, contextProgram, config);
+                const nestedPageUrl = getNestedPageUrl(url, contextProgram, config, program);
                 if (nestedPageUrl) {
                     candidateUrlCount++;
                     enqueuePage(nestedPageUrl);
@@ -314,11 +326,11 @@ export default async function scrape (program: Program, config: Config): Promise
     // Filter by fromDate if configured
     if (program.fromDate) {
         const cutoff = new Date(program.fromDate);
-        const before = episodes.filter(e => e.date < cutoff);
+        const before = episodes.filter(e => new Date(e.date) < cutoff);
         if (before.length > 0) {
             log(`${program.name} - Filtered out ${before.length} episodes before ${program.fromDate}`);
         }
-        return episodes.filter(e => e.date >= cutoff);
+        return episodes.filter(e => new Date(e.date) >= cutoff);
     }
 
     return episodes;
